@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset=utf-8>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+    <title>EaselJS Experiment#001</title>
+    <style>
+      body { margin: 0; background: black }
+      canvas { width: 100%; height: 100%; position: absolute }
+    </style>
+    <script src="https://code.createjs.com/easeljs-0.8.2.min.js"></script>
+    <script src="Tone.js"></script>
+  </head>
+  <body onload="init();">
+    <script>
+      function scale(minInput, maxInput, curInput, minOutput, maxOutput)
+      {
+        var t = curInput != 0 ? curInput/(maxInput - minInput) : 0;
+        t = t < 0 ? 0 : t;
+        t = t > 1 ? 1 : t;
+        t = t * (maxOutput - minOutput) + minOutput;
+        return t;
+      }
+
+      function distance(x1, y1, x2, y2)
+      {
+        var xDiff = x2 - x1;
+        var yDiff = y2 - y1;
+        return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
+      }
+      
+      function init()
+      {
+        var osc = new Tone.Oscillator(0, "sine").toMaster().start();
+        var freqMax = 600;
+
+        var canvas = document.createElement('canvas');
+        canvas.id = "ThebestCanvas";
+        canvas.width = 1280;
+        canvas.height = 720;
+        document.body.appendChild(canvas);
+
+        var stage = new createjs.Stage(canvas);
+        createjs.Touch.enable(stage);
+
+        var background = new createjs.Shape();
+        background.x = background.y = 0;
+        
+        var createNote = (halfSteps, frequencyMax, pianoWidth) => {
+          let octaveMin = 0;
+          let octaveMax = 8;
+
+          // Based of forumla: f_n = f_0 * (a)^n; where a = 2^(1/12); where f_0 = 440 [A_4 = 440Hz]
+          let f_0 = 440;
+          let a = Math.pow(2, 1/12);
+          let halfStepsFromC0ToA4 = 12 * 4 + 8;
+
+          let note = {};
+          note.frequency = f_0 * Math.pow(a, halfSteps - halfStepsFromC0ToA4);
+          note.position = scale(0, frequencyMax,
+                                note.frequency,
+                                0, pianoWidth); 
+          return note;
+        };
+
+        var subStart = scale(0, freqMax, 20, 0, canvas.width);
+        var bassStart = scale(0, freqMax, 50, 0, canvas.width);
+        var mudinessStart = scale(0, freqMax, 250, 0, canvas.width);
+        var humanStart = scale(0, freqMax, 800, 0, canvas.width);
+        var harmonicStart = scale(0, freqMax, 6000, 0, canvas.width);
+        var hissStart = scale(0, freqMax, 8000, 0, canvas.width);
+
+        background.graphics.beginLinearGradientFill(["black", "purple"], [.9,1], 0, 0, subStart, 0)
+                             .drawRect(0, 0, subStart+1, canvas.height).endFill()
+                           .beginLinearGradientFill(["purple", "orange"], [0,1], subStart, 0, bassStart, 0)
+                             .drawRect(subStart, 0, bassStart, canvas.height).endFill()
+                           .beginLinearGradientFill(["orange", "gold"], [0,1], bassStart, 0, mudinessStart, 0)
+                             .drawRect(bassStart, 0, mudinessStart, canvas.height).endFill()
+                           .beginLinearGradientFill(["gold", "yellow"], [0,1], mudinessStart, 0, humanStart, 0)
+                             .drawRect(mudinessStart, 0, humanStart, canvas.height).endFill();
+        let C0 = createNote(0, canvas.width);
+
+        for(let i = 0; i < 12 * 8; i++)
+        {
+          let note = createNote(i, freqMax, canvas.width);
+          background.graphics.beginStroke("white")
+                               .moveTo(note.position, 0).lineTo(note.position, canvas.height)
+                               .endStroke();
+        }
+
+        stage.addChild(background);
+
+        var circle = new createjs.Shape();
+        circle.graphics.beginFill("DeepSkyBlue").drawCircle(0, 0, 70);
+        circle.x = 0;
+        circle.y = canvas.height / 2;
+        stage.addChild(circle); 
+
+        circle.on("pressmove", function(e) {
+          e.target.x = e.stageX;
+          e.target.y = e.stageY;
+          osc.frequency.value = scale(subStart, canvas.width, e.stageX, 0, freqMax);
+          osc.volume.value = scale(0, canvas.height, e.stageY, 0, -40);
+          stage.update();
+        });
+        
+        stage.mouseMoveOutside = true;
+        stage.on("stagemousemove", function(e) {
+          var localMouseCoords = circle.globalToLocal(e.rawX, e.rawY);
+          circle.alpha = scale(0, canvas.width * .85, distance(0,0,localMouseCoords.x, localMouseCoords.y), 1, 0);
+        });
+
+        function update(e)
+        { 
+          stage.update();
+        }
+
+        createjs.Ticker.setFPS(60);
+        createjs.Ticker.addEventListener("tick", update);
+      }
+    </script>
+  </body>
+</html>
