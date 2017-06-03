@@ -78,34 +78,57 @@
           return note;
         };
 
-        var getFrequencyFromConstantNotewidthCanvas = (position, startingHalfSteps, noteWidth) => {
+        var getFrequencyFromConstantNoteWidthCanvas = (position, startingHalfSteps, noteWidth) => {
           let halfSteps = position / noteWidth + startingHalfSteps;
 
           let frequency = getNoteFrequency(halfSteps);
           return frequency;
         };
 
-        var getPositionFromConstantNotewidthFrequency = (frequency, canvasWidth, startingHalfSteps) => {
+        var getFrequencyHalfsteps = (frequency) => {
+          if(frequency == 0)
+            return 0;
+
+          let octaveMin = 0;
+          let octaveMax = 8;
+
+          let f_0 = 440;
+          let a = Math.pow(2, 1/12);
+          let halfStepsFromC0ToA4 = 12 * 4 + 8;
+
+          let frequencyHalfsteps = Math.log(frequency / f_0) / Math.log(a) + halfStepsFromC0ToA4;
+          
+          return frequencyHalfsteps;
         }
 
-        var subStart = scale(0, freqMax, 20, 0, canvas.width);
-        var bassStart = scale(0, freqMax, 50, 0, canvas.width);
-        var mudinessStart = scale(0, freqMax, 250, 0, canvas.width);
-        var humanStart = scale(0, freqMax, 800, 0, canvas.width);
-        var harmonicStart = scale(0, freqMax, 6000, 0, canvas.width);
-        var hissStart = scale(0, freqMax, 8000, 0, canvas.width);
+        var getPositionFromConstantNoteWidthFrequency = (frequency, startingFrequency, noteWidth) => {
+          let startingHalfsteps = getFrequencyHalfsteps(startingFrequency);
+          let frequencyHalfsteps = getFrequencyHalfsteps(frequency);
 
-        background.graphics.beginLinearGradientFill(["black", "purple"], [.9,1], 0, 0, subStart, 0)
-                             .drawRect(0, 0, subStart+1, canvas.height).endFill()
-                           .beginLinearGradientFill(["purple", "orange"], [0,1], subStart, 0, bassStart, 0)
+          let frequencyPosition = (frequencyHalfsteps - startingHalfsteps) * noteWidth;
+
+          return frequencyPosition;
+        }
+
+        let noteWidth = canvas.width / (12 * 3);
+
+        var subStart = getPositionFromConstantNoteWidthFrequency(20, 0, noteWidth);
+        var bassStart = getPositionFromConstantNoteWidthFrequency(50, 0, noteWidth);
+        var mudinessStart = getPositionFromConstantNoteWidthFrequency(250, 0, noteWidth);
+        var humanStart = getPositionFromConstantNoteWidthFrequency(800, 0, noteWidth);
+        var harmonicStart = getPositionFromConstantNoteWidthFrequency(6000, 0, noteWidth);
+        var hissStart = getPositionFromConstantNoteWidthFrequency(8000, 0, noteWidth);
+
+        background.graphics.beginLinearGradientFill(["black", "purple"], [0,1], 0, 0, subStart, 0)
+                             .drawRect(0, 0, subStart + 1, canvas.height).endFill()
+                           .beginLinearGradientFill(["purple", "goldenrod"], [0,1], subStart, 0, bassStart, 0)
                              .drawRect(subStart, 0, bassStart, canvas.height).endFill()
-                           .beginLinearGradientFill(["orange", "gold"], [0,1], bassStart, 0, mudinessStart, 0)
+                           .beginLinearGradientFill(["goldenrod", "gold"], [0,1], bassStart, 0, mudinessStart, 0)
                              .drawRect(bassStart, 0, mudinessStart, canvas.height).endFill()
                            .beginLinearGradientFill(["gold", "yellow"], [0,1], mudinessStart, 0, humanStart, 0)
                              .drawRect(mudinessStart, 0, humanStart, canvas.height).endFill();
         let C0 = createNote(0, canvas.width);
 
-        let noteWidth = canvas.width / 24;
         for(let i = 0; i < 12 * 8; i++)
         {
           let note = createNoteWithConstantWidth(i, freqMax, noteWidth);
@@ -122,10 +145,11 @@
         circle.y = canvas.height / 2;
         stage.addChild(circle); 
 
+        var halfNoteStart = 12 * 0;
         circle.on("pressmove", function(e) {
           e.target.x = e.stageX;
           e.target.y = e.stageY;
-          osc.frequency.value = getFrequencyFromConstantNotewidthCanvas(e.stageX, 12 * 4, noteWidth);
+          osc.frequency.value = getFrequencyFromConstantNoteWidthCanvas(e.stageX, halfNoteStart, noteWidth);
           osc.volume.value = scale(0, canvas.height, e.stageY, 0, -40);
           stage.update();
         });
