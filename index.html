@@ -46,7 +46,7 @@
         var background = new createjs.Shape();
         background.x = background.y = 0;
         
-        var createNote = (halfSteps, frequencyMax, pianoWidth) => {
+        var getNoteFrequency = (halfSteps) => {
           let octaveMin = 0;
           let octaveMax = 8;
 
@@ -55,13 +55,38 @@
           let a = Math.pow(2, 1/12);
           let halfStepsFromC0ToA4 = 12 * 4 + 8;
 
+          let noteFrequency = f_0 * Math.pow(a, halfSteps - halfStepsFromC0ToA4);
+
+          return noteFrequency;
+        }
+
+        var createNote = (halfSteps, frequencyMax, canvasWidth) => {
           let note = {};
-          note.frequency = f_0 * Math.pow(a, halfSteps - halfStepsFromC0ToA4);
+          note.frequency = getNoteFrequency(halfSteps); 
           note.position = scale(0, frequencyMax,
                                 note.frequency,
-                                0, pianoWidth); 
+                                0, canvasWidth); 
           return note;
         };
+        
+        var createNoteWithConstantWidth = (halfSteps, frequencyMax, width) => {
+          let note = {};
+          note.frequency = getNoteFrequency(halfSteps);
+          note.left = halfSteps * width; 
+          note.right = note.left + width;
+
+          return note;
+        };
+
+        var getFrequencyFromConstantNotewidthCanvas = (position, startingHalfSteps, noteWidth) => {
+          let halfSteps = position / noteWidth + startingHalfSteps;
+
+          let frequency = getNoteFrequency(halfSteps);
+          return frequency;
+        };
+
+        var getPositionFromConstantNotewidthFrequency = (frequency, canvasWidth, startingHalfSteps) => {
+        }
 
         var subStart = scale(0, freqMax, 20, 0, canvas.width);
         var bassStart = scale(0, freqMax, 50, 0, canvas.width);
@@ -80,11 +105,12 @@
                              .drawRect(mudinessStart, 0, humanStart, canvas.height).endFill();
         let C0 = createNote(0, canvas.width);
 
+        let noteWidth = canvas.width / 24;
         for(let i = 0; i < 12 * 8; i++)
         {
-          let note = createNote(i, freqMax, canvas.width);
+          let note = createNoteWithConstantWidth(i, freqMax, noteWidth);
           background.graphics.beginStroke("white")
-                               .moveTo(note.position, 0).lineTo(note.position, canvas.height)
+                               .moveTo(note.right, 0).lineTo(note.right, canvas.height)
                                .endStroke();
         }
 
@@ -99,7 +125,7 @@
         circle.on("pressmove", function(e) {
           e.target.x = e.stageX;
           e.target.y = e.stageY;
-          osc.frequency.value = scale(subStart, canvas.width, e.stageX, 0, freqMax);
+          osc.frequency.value = getFrequencyFromConstantNotewidthCanvas(e.stageX, 12 * 4, noteWidth);
           osc.volume.value = scale(0, canvas.height, e.stageY, 0, -40);
           stage.update();
         });
