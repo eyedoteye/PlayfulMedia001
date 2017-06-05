@@ -183,7 +183,7 @@
         };
 
         stage.addChild(background);
-        
+
         var circle = new createjs.Shape();
         circle.graphics.beginFill("DeepSkyBlue").drawCircle(0, 0, 70);
         circle.x = 0;
@@ -193,6 +193,75 @@
         var node = scale(canvas.height * .1, canvas.height * .9, circle.y, 0, 1);
         var halfNoteStart = 12 * 0;
         setBackground(background, node);
+
+        var frequencyModeToggle = new createjs.Shape();
+        frequencyModeToggle.width = 100;
+        frequencyModeToggle.height = 24;
+        frequencyModeToggle.x = (canvas.width - frequencyModeToggle.width) / 2;
+        frequencyModeToggle.y = canvas.height - 50;
+        frequencyModeToggle.thumbWidth = 30;
+        frequencyModeToggle.thumbHeight = 24;
+        frequencyModeToggle.thumbX = frequencyModeToggle.x + frequencyModeToggle.width / 2
+                                     - frequencyModeToggle.thumbWidth / 2;
+        stage.addChild(frequencyModeToggle);
+
+        var setFrequencyMode = () => {
+          let rect1 = {};
+          rect1.x = 0;
+          rect1.y = 0;
+          rect1.width = frequencyModeToggle.width;
+          rect1.height = (frequencyModeToggle.height - frequencyModeToggle.thumbHeight) / 2;
+          let rect2 = {};
+          rect2.x = 0; 
+          rect2.y = frequencyModeToggle.height - rect1.height;
+          rect2.width = frequencyModeToggle.width;
+          rect2.height = rect1.height;
+          let rect3 = {};
+          rect3.x = 0;
+          rect3.y = rect1.height;
+          rect3.width = frequencyModeToggle.thumbX - frequencyModeToggle.x; 
+          rect3.height = frequencyModeToggle.height - rect1.height * 2;
+          let rect4 = {};
+          rect4.x = rect3.width + frequencyModeToggle.thumbWidth;
+          rect4.y = rect3.y;
+          rect4.width = frequencyModeToggle.x + frequencyModeToggle.width
+                        - frequencyModeToggle.thumbX - frequencyModeToggle.thumbWidth;
+          rect4.height = rect3.height;
+          
+          let thumb = {};
+          thumb.x = rect3.x + rect3.width;
+          thumb.y = rect3.y;
+          thumb.width = rect4.x - thumb.x;
+          thumb.height = rect3.height;
+
+          frequencyModeToggle.graphics.clear();
+          frequencyModeToggle.graphics.beginFill("Black")
+                                        .drawRect(rect1.x, rect1.y, rect1.width, rect1.height)
+                                      .endFill()
+                                      .beginFill("Black")
+                                        .drawRect(rect2.x, rect2.y, rect2.width, rect2.height)
+                                      .endFill()
+                                      .beginFill("Black")
+                                        .drawRect(rect3.x, rect3.y, rect3.width, rect3.height)
+                                      .endFill()
+                                      .beginFill("Black")
+                                        .drawRect(rect4.x, rect4.y, rect4.width, rect4.height)
+                                      .endFill()
+                                      .beginFill("White")
+                                        .drawRect(thumb.x, thumb.y, thumb.width, thumb.height)
+                                      .endFill();
+        }
+        setFrequencyMode(node);
+
+        frequencyModeToggle.on("pressmove", function(e) {
+          frequencyModeToggle.thumbX = Math.max(Math.min(frequencyModeToggle.x
+                                                         + frequencyModeToggle.width
+                                                         - frequencyModeToggle.thumbWidth, e.stageX),
+                                                frequencyModeToggle.x);
+          setFrequencyMode();
+          console.log(frequencyModeToggle.thumbX);
+        });
+        
         circle.on("pressmove", function(e) {
           e.target.x = e.stageX;
           e.target.y = e.stageY;
