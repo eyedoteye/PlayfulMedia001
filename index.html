@@ -32,7 +32,7 @@
       function init()
       {
         var osc = new Tone.Oscillator(0, "sine").toMaster().start();
-        var freqMax = 600;
+        var freqMax = 8000;
 
         var canvas = document.createElement('canvas');
         canvas.id = "ThebestCanvas";
@@ -152,7 +152,7 @@
           currentMudinessStart = scale(0, 1, t, mudinessStart.constantFrequencyPosition, mudinessStart.constantNotewidthPosition);
           currentHumanStart = scale(0, 1, t, humanStart.constantFrequencyPosition, humanStart.constantNotewidthPosition);
           currentHarmonicStart = scale(0, 1, t, harmonicStart.constantFrequencyPosition, harmonicStart.constantNotewidthPosition);
-          currentHissStart = scale(0, 1, t, hissStart.costantFrequencyPosition, hissStart.constantNotewidthPosition); 
+          currentHissStart = scale(0, 1, t, hissStart.constantFrequencyPosition, hissStart.constantNotewidthPosition); 
 
           background.graphics.clear();
           
@@ -163,7 +163,11 @@
                              .beginLinearGradientFill(["goldenrod", "gold"], [0,1], currentBassStart, 0, currentMudinessStart, 0)
                                .drawRect(currentBassStart, 0, currentMudinessStart, canvas.height).endFill()
                              .beginLinearGradientFill(["gold", "yellow"], [0,1], currentMudinessStart, 0, currentHumanStart, 0)
-                               .drawRect(currentMudinessStart, 0, currentHumanStart, canvas.height).endFill();
+                               .drawRect(currentMudinessStart, 0, currentHumanStart, canvas.height).endFill()
+                             .beginLinearGradientFill(["yellow", "khaki"], [0,1], currentHumanStart, 0, currentHarmonicStart, 0)
+                               .drawRect(currentHumanStart, 0, currentHarmonicStart, canvas.height).endFill()
+                             .beginLinearGradientFill(["khaki", "white"], [0,1], currentHarmonicStart, 0, currentHissStart, 0)
+                               .drawRect(currentHarmonicStart, 0, currentHissStart, canvas.height).endFill();
 
           let C0 = createNote(0, canvas.width);
           for(let i = 0; i < 12 * 8; i++)
@@ -187,8 +191,9 @@
         circle.y = canvas.height / 2;
         stage.addChild(circle); 
 
-        var node = 0;
+        var node = scale(canvas.height * .1, canvas.height * .9, circle.y, 0, 1);
         var halfNoteStart = 12 * 0;
+        setBackground(background, node);
         circle.on("pressmove", function(e) {
           e.target.x = e.stageX;
           e.target.y = e.stageY;
