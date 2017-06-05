@@ -85,6 +85,15 @@
           return frequency;
         };
 
+        var getFrequencyFromPositionAndT = (t, x, halfNoteStart, noteWidth) => {
+          let frequencyFromConstantFrequencyPosition = scale(0, canvas.width, x, 0, freqMax);
+          let frequencyFromConstantNotewidthPosition = getFrequencyFromConstantNoteWidthCanvas(x, halfNoteStart, noteWidth);
+
+          let frequencyPosition = scale(0, 1, t, frequencyFromConstantFrequencyPosition, frequencyFromConstantNotewidthPosition);
+
+          return frequencyPosition;
+        };
+
         var getFrequencyHalfsteps = (frequency) => {
           if(frequency == 0)
             return 0;
@@ -112,30 +121,63 @@
 
         let noteWidth = canvas.width / (12 * 3);
 
-        var subStart = getPositionFromConstantNoteWidthFrequency(20, 0, noteWidth);
-        var bassStart = getPositionFromConstantNoteWidthFrequency(50, 0, noteWidth);
-        var mudinessStart = getPositionFromConstantNoteWidthFrequency(250, 0, noteWidth);
-        var humanStart = getPositionFromConstantNoteWidthFrequency(800, 0, noteWidth);
-        var harmonicStart = getPositionFromConstantNoteWidthFrequency(6000, 0, noteWidth);
-        var hissStart = getPositionFromConstantNoteWidthFrequency(8000, 0, noteWidth);
+        var subStart = {
+          constantFrequencyPosition: scale(0, freqMax, 20, 0, canvas.width),
+          constantNotewidthPosition: getPositionFromConstantNoteWidthFrequency(20, 0, noteWidth)
+        };
+        var bassStart = {
+          constantFrequencyPosition: scale(0, freqMax, 50, 0, canvas.width),
+          constantNotewidthPosition: getPositionFromConstantNoteWidthFrequency(50, 0, noteWidth)
+        };
+        var mudinessStart = {
+          constantFrequencyPosition: scale(0, freqMax, 250, 0, canvas.width),
+          constantNotewidthPosition: getPositionFromConstantNoteWidthFrequency(250, 0, noteWidth)
+        };
+        var humanStart = {
+          constantFrequencyPosition: scale(0, freqMax, 800, 0, canvas.width),
+          constantNotewidthPosition: getPositionFromConstantNoteWidthFrequency(800, 0, noteWidth)
+        };
+        var harmonicStart = {
+          constantFrequencyPosition: scale(0, freqMax, 6000, 0, canvas.width),
+          constantNotewidthPosition: getPositionFromConstantNoteWidthFrequency(6000, 0, noteWidth)
+        };
+        var hissStart = {
+          constantFrequencyPosition: scale(0, freqMax, 8000, 0, canvas.width),
+          constantNotewidthPosition: getPositionFromConstantNoteWidthFrequency(8000, 0, noteWidth)
+        };
 
-        background.graphics.beginLinearGradientFill(["black", "purple"], [0,1], 0, 0, subStart, 0)
-                             .drawRect(0, 0, subStart + 1, canvas.height).endFill()
-                           .beginLinearGradientFill(["purple", "goldenrod"], [0,1], subStart, 0, bassStart, 0)
-                             .drawRect(subStart, 0, bassStart, canvas.height).endFill()
-                           .beginLinearGradientFill(["goldenrod", "gold"], [0,1], bassStart, 0, mudinessStart, 0)
-                             .drawRect(bassStart, 0, mudinessStart, canvas.height).endFill()
-                           .beginLinearGradientFill(["gold", "yellow"], [0,1], mudinessStart, 0, humanStart, 0)
-                             .drawRect(mudinessStart, 0, humanStart, canvas.height).endFill();
-        let C0 = createNote(0, canvas.width);
+        var setBackground = (background, t) => {
+          currentSubStart = scale(0, 1, t, subStart.constantFrequencyPosition, subStart.constantNotewidthPosition);
+          currentBassStart = scale(0, 1, t, bassStart.constantFrequencyPosition, bassStart.constantNotewidthPosition);
+          currentMudinessStart = scale(0, 1, t, mudinessStart.constantFrequencyPosition, mudinessStart.constantNotewidthPosition);
+          currentHumanStart = scale(0, 1, t, humanStart.constantFrequencyPosition, humanStart.constantNotewidthPosition);
+          currentHarmonicStart = scale(0, 1, t, harmonicStart.constantFrequencyPosition, harmonicStart.constantNotewidthPosition);
+          currentHissStart = scale(0, 1, t, hissStart.costantFrequencyPosition, hissStart.constantNotewidthPosition); 
 
-        for(let i = 0; i < 12 * 8; i++)
-        {
-          let note = createNoteWithConstantWidth(i, freqMax, noteWidth);
-          background.graphics.beginStroke("white")
-                               .moveTo(note.right, 0).lineTo(note.right, canvas.height)
-                               .endStroke();
-        }
+          background.graphics.clear();
+          
+          background.graphics.beginLinearGradientFill(["black", "purple"], [0,1], 0, 0, currentSubStart, 0)
+                               .drawRect(0, 0, currentSubStart + 1, canvas.height).endFill()
+                             .beginLinearGradientFill(["purple", "goldenrod"], [0,1], currentSubStart, 0, currentBassStart, 0)
+                               .drawRect(currentSubStart, 0, currentBassStart, canvas.height).endFill()
+                             .beginLinearGradientFill(["goldenrod", "gold"], [0,1], currentBassStart, 0, currentMudinessStart, 0)
+                               .drawRect(currentBassStart, 0, currentMudinessStart, canvas.height).endFill()
+                             .beginLinearGradientFill(["gold", "yellow"], [0,1], currentMudinessStart, 0, currentHumanStart, 0)
+                               .drawRect(currentMudinessStart, 0, currentHumanStart, canvas.height).endFill();
+
+          let C0 = createNote(0, canvas.width);
+          for(let i = 0; i < 12 * 8; i++)
+          {
+            constantFrequencyNote = createNote(i, freqMax, canvas.width);
+            constantNotewidthNote = createNoteWithConstantWidth(i, freqMax, noteWidth);
+
+            noteRight = scale(0, 1, t, constantFrequencyNote.position, constantNotewidthNote.right);
+
+            background.graphics.beginStroke("white")
+                                 .moveTo(noteRight, 0).lineTo(noteRight, canvas.height)
+                                 .endStroke();
+          }
+        };
 
         stage.addChild(background);
 
@@ -145,12 +187,15 @@
         circle.y = canvas.height / 2;
         stage.addChild(circle); 
 
+        var node = 0;
         var halfNoteStart = 12 * 0;
         circle.on("pressmove", function(e) {
           e.target.x = e.stageX;
           e.target.y = e.stageY;
-          osc.frequency.value = getFrequencyFromConstantNoteWidthCanvas(e.stageX, halfNoteStart, noteWidth);
-          osc.volume.value = scale(0, canvas.height, e.stageY, 0, -40);
+          node = scale(canvas.height * .1, canvas.height * .9, e.stageY, 0, 1);
+          osc.frequency.value = getFrequencyFromPositionAndT(node, e.stageX, halfNoteStart, noteWidth);
+          // osc.volume.value = scale(0, canvas.height, e.stageY, 0, -40);
+          setBackground(background, node);
           stage.update();
         });
         
