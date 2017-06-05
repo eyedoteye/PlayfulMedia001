@@ -32,12 +32,11 @@
       function init()
       {
         var osc = new Tone.Oscillator(0, "sine").toMaster().start();
-        var freqMax = 8000;
 
         var canvas = document.createElement('canvas');
         canvas.id = "ThebestCanvas";
         canvas.width = 1280;
-        canvas.height = 720;
+        canvas.height = window.innerHeight;
         document.body.appendChild(canvas);
 
         var stage = new createjs.Stage(canvas);
@@ -119,6 +118,7 @@
           return frequencyPosition;
         }
 
+        let freqMax = getNoteFrequency(12 * 8);
         let noteWidth = canvas.width / (12 * 3);
 
         var subStart = {
@@ -169,7 +169,6 @@
                              .beginLinearGradientFill(["khaki", "white"], [0,1], currentHarmonicStart, 0, currentHissStart, 0)
                                .drawRect(currentHarmonicStart, 0, currentHissStart, canvas.height).endFill();
 
-          let C0 = createNote(0, canvas.width);
           for(let i = 0; i < 12 * 8; i++)
           {
             constantFrequencyNote = createNote(i, freqMax, canvas.width);
@@ -184,7 +183,7 @@
         };
 
         stage.addChild(background);
-
+        
         var circle = new createjs.Shape();
         circle.graphics.beginFill("DeepSkyBlue").drawCircle(0, 0, 70);
         circle.x = 0;
