@@ -15,7 +15,7 @@
     <script>
       function scale(minInput, maxInput, curInput, minOutput, maxOutput)
       {
-        var t = curInput != 0 ? curInput/(maxInput - minInput) : 0;
+        var t = curInput != 0 ? (curInput - minInput)/(maxInput - minInput) : 0;
         t = t < 0 ? 0 : t;
         t = t > 1 ? 1 : t;
         t = t * (maxOutput - minOutput) + minOutput;
@@ -190,11 +190,8 @@
         circle.y = canvas.height / 2;
         stage.addChild(circle); 
 
-        var node = scale(canvas.height * .1, canvas.height * .9, circle.y, 0, 1);
-        var halfNoteStart = 12 * 0;
-        setBackground(background, node);
-
         var frequencyModeToggle = new createjs.Shape();
+        frequencyModeToggle.t = 0;
         frequencyModeToggle.width = 100;
         frequencyModeToggle.height = 24;
         frequencyModeToggle.x = (canvas.width - frequencyModeToggle.width) / 2;
@@ -251,25 +248,24 @@
                                         .drawRect(thumb.x, thumb.y, thumb.width, thumb.height)
                                       .endFill();
         }
-        setFrequencyMode(node);
+
 
         frequencyModeToggle.on("pressmove", function(e) {
-          frequencyModeToggle.thumbX = Math.max(Math.min(frequencyModeToggle.x
-                                                         + frequencyModeToggle.width
-                                                         - frequencyModeToggle.thumbWidth, e.stageX),
-                                                frequencyModeToggle.x);
+          let leftSide = frequencyModeToggle.x;
+          let rightSide = frequencyModeToggle.x + frequencyModeToggle.width - frequencyModeToggle.thumbWidth;
+          frequencyModeToggle.thumbX = Math.max(Math.min(rightSide, e.stageX), leftSide);
           setFrequencyMode();
-          console.log(frequencyModeToggle.thumbX);
+
+          frequencyModeToggle.t = scale(leftSide, rightSide, frequencyModeToggle.thumbX, 0, 1);
+          setBackground(background, frequencyModeToggle.t);
+          console.log(frequencyModeToggle.t);
         });
         
         circle.on("pressmove", function(e) {
           e.target.x = e.stageX;
           e.target.y = e.stageY;
-          node = scale(canvas.height * .1, canvas.height * .9, e.stageY, 0, 1);
-          osc.frequency.value = getFrequencyFromPositionAndT(node, e.stageX, halfNoteStart, noteWidth);
+          osc.frequency.value = getFrequencyFromPositionAndT(frequencyModeToggle.t, e.stageX, halfNoteStart, noteWidth);
           // osc.volume.value = scale(0, canvas.height, e.stageY, 0, -40);
-          setBackground(background, node);
-          stage.update();
         });
         
         stage.mouseMoveOutside = true;
@@ -282,6 +278,10 @@
         { 
           stage.update();
         }
+        
+        var halfNoteStart = 12 * 0;
+        setBackground(background, frequencyModeToggle.t);
+        setFrequencyMode(frequencyModeToggle.t);
 
         createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener("tick", update);
