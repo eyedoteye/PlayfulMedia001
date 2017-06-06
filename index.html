@@ -258,6 +258,7 @@
 
           frequencyModeToggle.t = scale(leftSide, rightSide, clampedPoint, 0, 1);
           setBackground(background, frequencyModeToggle.t);
+          osc.frequency.value = getFrequencyFromPositionAndT(frequencyModeToggle.t, circle.x, halfNoteStart, noteWidth);
         });
         
         circle.on("pressmove", function(e) {
