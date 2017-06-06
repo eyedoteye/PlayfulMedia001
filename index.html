@@ -67,9 +67,7 @@
                                 0, canvasWidth); 
           return note;
         };
-        
-        var createNoteWithConstantWidth = (halfSteps, frequencyMax, width) => {
-          let note = {};
+        var createNoteWithConstantWidth = (halfSteps, frequencyMax, width) => { let note = {};
           note.frequency = getNoteFrequency(halfSteps);
           note.left = halfSteps * width; 
           note.right = note.left + width;
@@ -188,7 +186,11 @@
         circle.graphics.beginFill("DeepSkyBlue").drawCircle(0, 0, 70);
         circle.x = 0;
         circle.y = canvas.height / 2;
-        stage.addChild(circle); 
+
+        var text = new createjs.Text("", "20px Arial", "#ff7700");
+        text.x = 0;
+        text.y = 0;
+        stage.addChild(circle, text);
 
         var frequencyModeToggle = new createjs.Shape();
         frequencyModeToggle.t = 0;
@@ -259,12 +261,14 @@
           frequencyModeToggle.t = scale(leftSide, rightSide, clampedPoint, 0, 1);
           setBackground(background, frequencyModeToggle.t);
           osc.frequency.value = getFrequencyFromPositionAndT(frequencyModeToggle.t, circle.x, halfNoteStart, noteWidth);
+          text.text = getFrequencyFromPositionAndT(frequencyModeToggle.t, circle.x, halfNoteStart, noteWidth);
         });
         
         circle.on("pressmove", function(e) {
           e.target.x = e.stageX;
           e.target.y = e.stageY;
           osc.frequency.value = getFrequencyFromPositionAndT(frequencyModeToggle.t, e.stageX, halfNoteStart, noteWidth);
+          text.text = getFrequencyFromPositionAndT(frequencyModeToggle.t, circle.x, halfNoteStart, noteWidth);
           // osc.volume.value = scale(0, canvas.height, e.stageY, 0, -40);
         });
         
