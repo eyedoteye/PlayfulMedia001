@@ -251,12 +251,13 @@
 
 
         frequencyModeToggle.on("pressmove", function(e) {
-          let leftSide = frequencyModeToggle.x;
-          let rightSide = frequencyModeToggle.x + frequencyModeToggle.width - frequencyModeToggle.thumbWidth;
-          frequencyModeToggle.thumbX = Math.max(Math.min(rightSide, e.stageX), leftSide);
+          let leftSide = frequencyModeToggle.x + frequencyModeToggle.thumbWidth / 2;
+          let rightSide = frequencyModeToggle.x + frequencyModeToggle.width - frequencyModeToggle.thumbWidth / 2;
+          let clampedPoint = Math.max(Math.min(rightSide, e.stageX), leftSide);
+          frequencyModeToggle.thumbX = clampedPoint - frequencyModeToggle.thumbWidth / 2;
           setFrequencyMode();
 
-          frequencyModeToggle.t = scale(leftSide, rightSide, frequencyModeToggle.thumbX, 0, 1);
+          frequencyModeToggle.t = scale(leftSide, rightSide, clampedPoint, 0, 1);
           setBackground(background, frequencyModeToggle.t);
           console.log(frequencyModeToggle.t);
         });
