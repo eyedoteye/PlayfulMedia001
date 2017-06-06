@@ -198,8 +198,7 @@
         frequencyModeToggle.y = canvas.height - 50;
         frequencyModeToggle.thumbWidth = 30;
         frequencyModeToggle.thumbHeight = 24;
-        frequencyModeToggle.thumbX = frequencyModeToggle.x + frequencyModeToggle.width / 2
-                                     - frequencyModeToggle.thumbWidth / 2;
+        frequencyModeToggle.thumbX = frequencyModeToggle.x;
         stage.addChild(frequencyModeToggle);
 
         var setFrequencyMode = () => {
@@ -259,7 +258,6 @@
 
           frequencyModeToggle.t = scale(leftSide, rightSide, clampedPoint, 0, 1);
           setBackground(background, frequencyModeToggle.t);
-          console.log(frequencyModeToggle.t);
         });
         
         circle.on("pressmove", function(e) {
