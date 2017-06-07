@@ -83,7 +83,12 @@
         };
 
         var getFrequencyFromPositionAndT = (t, x, halfNoteStart, noteWidth) => {
-          let frequencyFromConstantFrequencyPosition = scale(0, canvas.width, x, 0, freqMax);
+          let frequencyStart = getNoteFrequency(halfNoteStart);
+          let C8linear = createNote(12 * 8 - 1, freqMax, canvas.width);
+          let C8fixed = createNoteWithConstantWidth(12 * 8 - 1, freqMax, noteWidth);
+          let C8position = scale(0, 1, t, C8linear.position, C8fixed.left);
+
+          let frequencyFromConstantFrequencyPosition = scale(0, C8position, x, frequencyStart, freqMax);
           let frequencyFromConstantNotewidthPosition = getFrequencyFromConstantNoteWidthCanvas(x, halfNoteStart, noteWidth);
 
           let frequencyPosition = scale(0, 1, t, frequencyFromConstantFrequencyPosition, frequencyFromConstantNotewidthPosition);
@@ -105,7 +110,7 @@
           let frequencyHalfsteps = Math.log(frequency / f_0) / Math.log(a) + halfStepsFromC0ToA4;
           
           return frequencyHalfsteps;
-        }
+        };
 
         var getPositionFromConstantNoteWidthFrequency = (frequency, startingFrequency, noteWidth) => {
           let startingHalfsteps = getFrequencyHalfsteps(startingFrequency);
@@ -114,7 +119,7 @@
           let frequencyPosition = (frequencyHalfsteps - startingHalfsteps) * noteWidth;
 
           return frequencyPosition;
-        }
+        };
 
         let freqMax = getNoteFrequency(12 * 8);
         let noteWidth = canvas.width / (12 * 3);
