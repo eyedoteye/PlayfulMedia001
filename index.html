@@ -116,15 +116,77 @@
         frequencyBall.maxRadius = 50;
         frequencyBall.x = canvas.width / 2;
         frequencyBall.y = canvas.height - 35;
+        frequencyBall.yVelocity = 0;
         stage.addChild(frequencyBall);
 
-        frequencyBall.on("pressmove", function(e) {
-          e.target.x = e.stageX;
-          e.target.y = e.stageY;
+        let mouseDelta = {
+          x: 0,
+          y: 0,
+          _xPrev: 0,
+          _yPrev: 0,
+          _reset: true
+        };
+
+        stage.on("pressmove", function(e) {
+          //e.target.x = e.stageX;
+          //e.target.y = e.stageY;
+          if(mouseDelta._reset)
+          {
+            mouseDelta.x = 0;
+            mouseDelta.y = 0;
+          }
+          else
+          {
+            mouseDelta.x = e.stageX - mouseDelta._xPrev;
+            mouseDelta.y = e.stageY - mouseDelta._yPrev;
+          }
+
+          mouseDelta._xPrev = e.stageX;
+          mouseDelta._yPrev = e.stageY;
+
+          mouseDelta._reset = false;
+
+          let localMouseCoords = frequencyBall.globalToLocal(stage.mouseX, stage.mouseY);
+          if(frequencyBall.hitTest(localMouseCoords.x, localMouseCoords.y))
+          {
+            frequencyBall.x += mouseDelta.x;
+            frequencyBall.y += mouseDelta.y;
+            frequencyBall.inertia = 1;
+            frequencyBall.yVelocity = 0;
+          }
+          else
+          {
+            frequencyBall.inertia = 0;
+          }
+
+          console.log(mouseDelta.y);
+        });
+        stage.on("pressup", function(e) {
+          mouseDelta._reset = true;
         });
 
-        frequencyBall.update = () =>
+        frequencyBall.update = (dT) =>
         {
+          frequencyBall.yVelocity += 98 * dT;
+
+          if(Math.abs(frequencyBall.yVelocity) > frequencyBall.inertia)
+          {
+            let direction = 1;
+            let yVelocity = Math.abs(frequencyBall.yVelocity) - frequencyBall.inertia;
+            if(yVelocity > 100)
+              yVelocity = 100;
+
+            yVelocity *= direction;
+
+            frequencyBall.y += yVelocity * dT;
+          } 
+
+          if(frequencyBall.y > canvas.height - 35)
+          {
+            frequencyBall.y = canvas.height - 35;
+            frequencyBall.yVelocity = 0;
+          }
+
           let radius = scale(0, stage.height, frequencyBall.y, frequencyBall.maxRadius, frequencyBall.baseRadius); 
           frequencyBall.radius = radius; 
 
@@ -132,9 +194,10 @@
           frequencyBall.graphics.beginFill("Green").drawCircle(0, 0, frequencyBall.radius);
         };
 
-        function update()
+        function update(e)
         {
-          frequencyBall.update();
+          let dT = e.delta / 1000;
+          frequencyBall.update(dT);
           stage.update();
         }
 
