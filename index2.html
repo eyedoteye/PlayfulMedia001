@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset=utf-8>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+    <title>EaselJS Experiment#001</title>
+    <style>
+      body { margin: 0; background: black }
+      canvas { width: 100%; height: 100%; position: absolute }
+    </style>
+    <script src="https://code.createjs.com/easeljs-0.8.2.min.js"></script>
+    <script src="Tone.js"></script>
+  </head>
+  <body onload="init();">
+    <script>
+      function scale(minInput, maxInput, curInput, minOutput, maxOutput)
+      {
+        var t = curInput != 0 ? (curInput - minInput)/(maxInput - minInput) : 0;
+        t = t < 0 ? 0 : t;
+        t = t > 1 ? 1 : t;
+        t = t * (maxOutput - minOutput) + minOutput;
+        return t;
+      }
+
+      function distance(x1, y1, x2, y2)
+      {
+        var xDiff = x2 - x1;
+        var yDiff = y2 - y1;
+        return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
+      }
+      
+      function init()
+      {
+        var osc = new Tone.Oscillator(0, "sine").toMaster().start();
+
+        var canvas = document.createElement('canvas');
+        canvas.id = "ThebestCanvas";
+        canvas.width = 1280;
+        canvas.height = window.innerHeight;
+        document.body.appendChild(canvas);
+
+        var stage = new createjs.Stage(canvas);
+        createjs.Touch.enable(stage);
+
+        var background = new createjs.Shape();
+        background.x = background.y = 0;
+        
+        var getNoteFrequency = (halfSteps) => {
+          let octaveMin = 0;
+          let octaveMax = 8;
+
+          // Based of forumla: f_n = f_0 * (a)^n; where a = 2^(1/12); where f_0 = 440 [A_4 = 440Hz]
+          let f_0 = 440;
+          let a = Math.pow(2, 1/12);
+          let halfStepsFromC0ToA4 = 12 * 4 + 8;
+
+          let noteFrequency = f_0 * Math.pow(a, halfSteps - halfStepsFromC0ToA4);
+
+          return noteFrequency;
+        }
+
+        var createNote = (halfSteps, frequencyMax, canvasWidth) => {
+          let note = {};
+          note.frequency = getNoteFrequency(halfSteps); 
+          note.position = scale(0, frequencyMax,
+                                note.frequency,
+                                0, canvasWidth); 
+          return note;
+        };
+        var createNoteWithConstantWidth = (halfSteps, frequencyMax, width) => { let note = {};
+          note.frequency = getNoteFrequency(halfSteps);
+          note.left = halfSteps * width; 
+          note.right = note.left + width;
+
+          return note;
+        };
+
+        var getFrequencyFromConstantNoteWidthCanvas = (position, startingHalfSteps, noteWidth) => {
+          let halfSteps = position / noteWidth + startingHalfSteps;
+
+          let frequency = getNoteFrequency(halfSteps);
+          return frequency;
+        };
+
+        var getFrequencyFromPositionAndT = (t, x, halfNoteStart, noteWidth) => {
+          let frequencyStart = getNoteFrequency(halfNoteStart);
+          let C8linear = createNote(12 * 8 - 1, freqMax, canvas.width);
+          let C8fixed = createNoteWithConstantWidth(12 * 8 - 1, freqMax, noteWidth);
+          let C8position = scale(0, 1, t, C8linear.position, C8fixed.left);
+
+          let frequencyFromConstantFrequencyPosition = scale(0, C8position, x, frequencyStart, freqMax);
+          let frequencyFromConstantNotewidthPosition = getFrequencyFromConstantNoteWidthCanvas(x, halfNoteStart, noteWidth);
+
+          let frequencyPosition = scale(0, 1, t, frequencyFromConstantFrequencyPosition, frequencyFromConstantNotewidthPosition);
+
+          return frequencyPosition;
+        };
+
+        var getFrequencyHalfsteps = (frequency) => {
+          if(frequency == 0)
+            return 0;
+
+          let octaveMin = 0;
+          let octaveMax = 8;
+
+          let f_0 = 440;
+          let a = Math.pow(2, 1/12);
+          let halfStepsFromC0ToA4 = 12 * 4 + 8;
+
+          let frequencyHalfsteps = Math.log(frequency / f_0) / Math.log(a) + halfStepsFromC0ToA4;
+          
+          return frequencyHalfsteps;
+        };
+
+        var getPositionFromConstantNoteWidthFrequency = (frequency, startingFrequency, noteWidth) => {
+          let startingHalfsteps = getFrequencyHalfsteps(startingFrequency);
+          let frequencyHalfsteps = getFrequencyHalfsteps(frequency);
+
+          let frequencyPosition = (frequencyHalfsteps - startingHalfsteps) * noteWidth;
+
+          return frequencyPosition;
+        };
+
+        let freqMax = getNoteFrequency(12 * 8);
+        let noteWidth = canvas.width / (12 * 3);
+
+        var subStart = {
+          constantFrequencyPosition: scale(0, freqMax, 20, 0, canvas.width),
+          constantNotewidthPosition: getPositionFromConstantNoteWidthFrequency(20, 0, noteWidth)
+        };
+        var bassStart = {
+          constantFrequencyPosition: scale(0, freqMax, 50, 0, canvas.width),
+          constantNotewidthPosition: getPositionFromConstantNoteWidthFrequency(50, 0, noteWidth)
+        };
+        var mudinessStart = {
+          constantFrequencyPosition: scale(0, freqMax, 250, 0, canvas.width),
+          constantNotewidthPosition: getPositionFromConstantNoteWidthFrequency(250, 0, noteWidth)
+        };
+        var humanStart = {
+          constantFrequencyPosition: scale(0, freqMax, 800, 0, canvas.width),
+          constantNotewidthPosition: getPositionFromConstantNoteWidthFrequency(800, 0, noteWidth)
+        };
+        var harmonicStart = {
+          constantFrequencyPosition: scale(0, freqMax, 6000, 0, canvas.width),
+          constantNotewidthPosition: getPositionFromConstantNoteWidthFrequency(6000, 0, noteWidth)
+        };
+        var hissStart = {
+          constantFrequencyPosition: scale(0, freqMax, 8000, 0, canvas.width),
+          constantNotewidthPosition: getPositionFromConstantNoteWidthFrequency(8000, 0, noteWidth)
+        };
+
+        var setBackground = (background, t) => {
+          currentSubStart = scale(0, 1, t, subStart.constantFrequencyPosition, subStart.constantNotewidthPosition);
+          currentBassStart = scale(0, 1, t, bassStart.constantFrequencyPosition, bassStart.constantNotewidthPosition);
+          currentMudinessStart = scale(0, 1, t, mudinessStart.constantFrequencyPosition, mudinessStart.constantNotewidthPosition);
+          currentHumanStart = scale(0, 1, t, humanStart.constantFrequencyPosition, humanStart.constantNotewidthPosition);
+          currentHarmonicStart = scale(0, 1, t, harmonicStart.constantFrequencyPosition, harmonicStart.constantNotewidthPosition);
+          currentHissStart = scale(0, 1, t, hissStart.constantFrequencyPosition, hissStart.constantNotewidthPosition); 
+
+          background.graphics.clear();
+          
+          background.graphics.beginLinearGradientFill(["black", "purple"], [0,1], 0, 0, currentSubStart, 0)
+                               .drawRect(0, 0, currentSubStart + 1, canvas.height).endFill()
+                             .beginLinearGradientFill(["purple", "goldenrod"], [0,1], currentSubStart, 0, currentBassStart, 0)
+                               .drawRect(currentSubStart, 0, currentBassStart, canvas.height).endFill()
+                             .beginLinearGradientFill(["goldenrod", "gold"], [0,1], currentBassStart, 0, currentMudinessStart, 0)
+                               .drawRect(currentBassStart, 0, currentMudinessStart, canvas.height).endFill()
+                             .beginLinearGradientFill(["gold", "yellow"], [0,1], currentMudinessStart, 0, currentHumanStart, 0)
+                               .drawRect(currentMudinessStart, 0, currentHumanStart, canvas.height).endFill()
+                             .beginLinearGradientFill(["yellow", "khaki"], [0,1], currentHumanStart, 0, currentHarmonicStart, 0)
+                               .drawRect(currentHumanStart, 0, currentHarmonicStart, canvas.height).endFill()
+                             .beginLinearGradientFill(["khaki", "white"], [0,1], currentHarmonicStart, 0, currentHissStart, 0)
+                               .drawRect(currentHarmonicStart, 0, currentHissStart, canvas.height).endFill();
+
+          for(let i = 0; i < 12 * 8; i++)
+          {
+            constantFrequencyNote = createNote(i, freqMax, canvas.width);
+            constantNotewidthNote = createNoteWithConstantWidth(i, freqMax, noteWidth);
+
+            noteRight = scale(0, 1, t, constantFrequencyNote.position, constantNotewidthNote.right);
+
+            background.graphics.beginStroke("white")
+                                 .moveTo(noteRight, 0).lineTo(noteRight, canvas.height)
+                                 .endStroke();
+          }
+        };
+
+        stage.addChild(background);
+
+        var circle = new createjs.Shape();
+        circle.graphics.beginFill("DeepSkyBlue").drawCircle(0, 0, 70);
+        circle.x = 0;
+        circle.y = canvas.height / 2;
+
+        var text = new createjs.Text("", "20px Arial", "#ff7700");
+        text.x = 0;
+        text.y = 0;
+        stage.addChild(circle, text);
+
+        var frequencyModeToggle = new createjs.Shape();
+        frequencyModeToggle.t = 0;
+        frequencyModeToggle.width = 100;
+        frequencyModeToggle.height = 24;
+        frequencyModeToggle.x = (canvas.width - frequencyModeToggle.width) / 2;
+        frequencyModeToggle.y = canvas.height - 50;
+        frequencyModeToggle.thumbWidth = 30;
+        frequencyModeToggle.thumbHeight = 24;
+        frequencyModeToggle.thumbX = frequencyModeToggle.x;
+        stage.addChild(frequencyModeToggle);
+
+        var setFrequencyMode = () => {
+          let rect1 = {};
+          rect1.x = 0;
+          rect1.y = 0;
+          rect1.width = frequencyModeToggle.width;
+          rect1.height = (frequencyModeToggle.height - frequencyModeToggle.thumbHeight) / 2;
+          let rect2 = {};
+          rect2.x = 0; 
+          rect2.y = frequencyModeToggle.height - rect1.height;
+          rect2.width = frequencyModeToggle.width;
+          rect2.height = rect1.height;
+          let rect3 = {};
+          rect3.x = 0;
+          rect3.y = rect1.height;
+          rect3.width = frequencyModeToggle.thumbX - frequencyModeToggle.x; 
+          rect3.height = frequencyModeToggle.height - rect1.height * 2;
+          let rect4 = {};
+          rect4.x = rect3.width + frequencyModeToggle.thumbWidth;
+          rect4.y = rect3.y;
+          rect4.width = frequencyModeToggle.x + frequencyModeToggle.width
+                        - frequencyModeToggle.thumbX - frequencyModeToggle.thumbWidth;
+          rect4.height = rect3.height;
+          
+          let thumb = {};
+          thumb.x = rect3.x + rect3.width;
+          thumb.y = rect3.y;
+          thumb.width = rect4.x - thumb.x;
+          thumb.height = rect3.height;
+
+          frequencyModeToggle.graphics.clear();
+          frequencyModeToggle.graphics.beginFill("Black")
+                                        .drawRect(rect1.x, rect1.y, rect1.width, rect1.height)
+                                      .endFill()
+                                      .beginFill("Black")
+                                        .drawRect(rect2.x, rect2.y, rect2.width, rect2.height)
+                                      .endFill()
+                                      .beginFill("Black")
+                                        .drawRect(rect3.x, rect3.y, rect3.width, rect3.height)
+                                      .endFill()
+                                      .beginFill("Black")
+                                        .drawRect(rect4.x, rect4.y, rect4.width, rect4.height)
+                                      .endFill()
+                                      .beginFill("White")
+                                        .drawRect(thumb.x, thumb.y, thumb.width, thumb.height)
+                                      .endFill();
+        }
+
+
+        frequencyModeToggle.on("pressmove", function(e) {
+          let leftSide = frequencyModeToggle.x + frequencyModeToggle.thumbWidth / 2;
+          let rightSide = frequencyModeToggle.x + frequencyModeToggle.width - frequencyModeToggle.thumbWidth / 2;
+          let clampedPoint = Math.max(Math.min(rightSide, e.stageX), leftSide);
+          frequencyModeToggle.thumbX = clampedPoint - frequencyModeToggle.thumbWidth / 2;
+          setFrequencyMode();
+
+          frequencyModeToggle.t = scale(leftSide, rightSide, clampedPoint, 0, 1);
+          setBackground(background, frequencyModeToggle.t);
+          osc.frequency.value = getFrequencyFromPositionAndT(frequencyModeToggle.t, circle.x, halfNoteStart, noteWidth);
+          text.text = getFrequencyFromPositionAndT(frequencyModeToggle.t, circle.x, halfNoteStart, noteWidth);
+        });
+        
+        circle.on("pressmove", function(e) {
+          e.target.x = e.stageX;
+          e.target.y = e.stageY;
+          osc.frequency.value = getFrequencyFromPositionAndT(frequencyModeToggle.t, e.stageX, halfNoteStart, noteWidth);
+          text.text = getFrequencyFromPositionAndT(frequencyModeToggle.t, circle.x, halfNoteStart, noteWidth);
+          // osc.volume.value = scale(0, canvas.height, e.stageY, 0, -40);
+        });
+        
+        stage.mouseMoveOutside = true;
+        stage.on("stagemousemove", function(e) {
+          var localMouseCoords = circle.globalToLocal(e.rawX, e.rawY);
+          circle.alpha = scale(0, canvas.width * .85, distance(0,0,localMouseCoords.x, localMouseCoords.y), 1, 0);
+        });
+
+        function update(e)
+        { 
+          stage.update();
+        }
+        
+        var halfNoteStart = 12 * 0;
+        setBackground(background, frequencyModeToggle.t);
+        setFrequencyMode(frequencyModeToggle.t);
+
+        createjs.Ticker.setFPS(60);
+        createjs.Ticker.addEventListener("tick", update);
+      }
+    </script>
+  </body>
+</html>
