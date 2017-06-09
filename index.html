@@ -132,7 +132,7 @@
         linearFrequencyArea = new LinearFrequencyArea(stage, canvas);
 
         var frequencyBall = new createjs.Shape();
-        frequencyBall.baseRadius = 40;
+        frequencyBall.baseRadius = 20;
         frequencyBall.radius = 20;
         frequencyBall.maxRadius = 70;
         frequencyBall.x = canvas.width / 2;
@@ -181,35 +181,39 @@
 
           console.log(mouseDelta.x, mouseDelta.y);
 
-          frequencyBall.x = e.stageX;
-          frequencyBall.y = e.stageY;
-        //  if(stage.pullMode == "frequencyBall")
-        //  {
-        //    let x = stage.mouseX - frequencyBall.x;
-        //    let y = stage.mouseY - frequencyBall.y;
-        //    let distance = Math.sqrt(x * x + y * y);
+        //  frequencyBall.x = e.stageX;
+        //  frequencyBall.y = e.stageY;
+          if(stage.pullMode == "frequencyBall")
+          {
+            let x = stage.mouseX - frequencyBall.x;
+            let y = stage.mouseY - frequencyBall.y;
+            let distance = Math.sqrt(x * x + y * y);
 
-        //    if(distance == 0)
-        //    {
-        //      distance = .001;
-        //    }
+            if(distance == 0)
+            {
+              distance = .001;
+            }
 
-        //    let forceToMouse = {
-        //      xDir: x / distance,
-        //      yDir: y / distance,
-        //      force: mouseMoving ? distance : 100
-        //    }
+            let forceToMouse = {
+              xDir: x / distance,
+              yDir: y / distance,
+              force: mouseMoving ? distance : 100
+            }
 
-        //    if(forceToMouse.force > distance)
-        //      forceToMouse.force = distance;
+            if(forceToMouse.force > distance)
+              forceToMouse.force = distance;
 
-        //    console.group();
-        //    console.log(forceToMouse.xDir, forceToMouse.yDir, forceToMouse.force, distance);
-        //    console.groupEnd();
-        //    
-        //    frequencyBall.x += forceToMouse.xDir * forceToMouse.force;
-        //    frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
-        //  }
+            console.group();
+            console.log(forceToMouse.xDir, forceToMouse.yDir, forceToMouse.force, distance);
+            console.groupEnd();
+            
+            frequencyBall.x += forceToMouse.xDir * forceToMouse.force;
+            frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
+
+            frequencyBall.updateRadius();
+            frequencyBall.limitToBounds();
+            frequencyBall.setRender();
+          }
 
           stage.update();
         });
@@ -219,6 +223,24 @@
           stage.pullMode = "";
         });
 
+
+        frequencyBall.limitToBounds = () =>
+        {
+          if(frequencyBall.y > canvas.height - 35)
+          {
+            frequencyBall.y = canvas.height - 35;
+          }
+          else if(frequencyBall.y - frequencyBall.radius < 0)
+          {
+            frequencyBall.y = frequencyBall.radius;
+          }
+        }
+           
+        frequencyBall.updateRadius = () =>
+        {
+          let radius = scale(0, stage.height - 35, frequencyBall.y, frequencyBall.maxRadius, frequencyBall.baseRadius); 
+          frequencyBall.radius = radius; 
+        };
 
         frequencyBall.setRender = () =>
         {
@@ -230,17 +252,7 @@
         {
           //frequencyBall.y += scale(0, canvas.height, frequencyBall.y, 150, 5);
 
-          if(frequencyBall.y > canvas.height - 35)
-          {
-            frequencyBall.y = canvas.height - 35;
-          }
-          else if(frequencyBall.y < 0)
-          {
-            frequencyBall.y = 0;
-          }
-
-          let radius = scale(0, stage.height, frequencyBall.y, frequencyBall.maxRadius, frequencyBall.baseRadius); 
-          frequencyBall.radius = radius; 
+          frequencyBall.updateRadius();
 
           let localMouseCoords = frequencyBall.globalToLocal(stage.mouseX, stage.mouseY);
           if(!mouseMoving && !frequencyBall.hitTest(localMouseCoords.x, localMouseCoords.y))
