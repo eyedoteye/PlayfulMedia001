@@ -116,6 +116,7 @@
         frequencyBall.maxRadius = 50;
         frequencyBall.x = canvas.width / 2;
         frequencyBall.y = canvas.height - 35;
+        frequencyBall.xVelocity = 0;
         frequencyBall.yVelocity = 0;
         stage.addChild(frequencyBall);
 
@@ -127,9 +128,19 @@
           _reset: true
         };
 
-        stage.on("pressmove", function(e) {
+        stage.on("stagemousedown", function() {
+          let localMouseCoords = frequencyBall.globalToLocal(stage.mouseX, stage.mouseY);
+          if(frequencyBall.hitTest(localMouseCoords.x, localMouseCoords.y))
+          {
+            stage.pullMode = "frequencyBall";
+          }
+        });
+
+        let mouseMoving = false;
+        stage.on("stagemousemove", function(e) {
           //e.target.x = e.stageX;
           //e.target.y = e.stageY;
+          mouseMoving = true;
           if(mouseDelta._reset)
           {
             mouseDelta.x = 0;
@@ -145,50 +156,61 @@
           mouseDelta._yPrev = e.stageY;
 
           mouseDelta._reset = false;
-
-          let localMouseCoords = frequencyBall.globalToLocal(stage.mouseX, stage.mouseY);
-          if(frequencyBall.hitTest(localMouseCoords.x, localMouseCoords.y))
-          {
-            frequencyBall.x += mouseDelta.x;
-            frequencyBall.y += mouseDelta.y;
-            frequencyBall.inertia = 1;
-            frequencyBall.yVelocity = 0;
-          }
-          else
-          {
-            frequencyBall.inertia = 0;
-          }
-
-          console.log(mouseDelta.y);
         });
-        stage.on("pressup", function(e) {
+
+        stage.on("stagemouseup", function(e) {
           mouseDelta._reset = true;
+          stage.pullMode = "";
         });
+
 
         frequencyBall.update = (dT) =>
         {
-          frequencyBall.yVelocity += 98 * dT;
+          frequencyBall.y += scale(0, canvas.height, frequencyBall.y, 150, 5);
 
-          if(Math.abs(frequencyBall.yVelocity) > frequencyBall.inertia)
+          if(stage.pullMode == "frequencyBall")
           {
-            let direction = 1;
-            let yVelocity = Math.abs(frequencyBall.yVelocity) - frequencyBall.inertia;
-            if(yVelocity > 100)
-              yVelocity = 100;
+            let x = stage.mouseX - frequencyBall.x;
+            let y = stage.mouseY - frequencyBall.y;
+            let distance = Math.sqrt(x * x + y * y);
 
-            yVelocity *= direction;
+            if(distance == 0)
+            {
+              distance = .001;
+            }
 
-            frequencyBall.y += yVelocity * dT;
-          } 
+            let forceToMouse = {
+              xDir: x / distance,
+              yDir: y / distance,
+              force: mouseMoving ? distance : 100
+            }
+
+            if(forceToMouse.force > distance)
+              forceToMouse.force = distance;
+
+            console.group();
+            console.log(forceToMouse.xDir, forceToMouse.yDir, forceToMouse.force, distance);
+            console.groupEnd();
+            
+            frequencyBall.x += forceToMouse.xDir * forceToMouse.force;
+            frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
+          }
 
           if(frequencyBall.y > canvas.height - 35)
           {
             frequencyBall.y = canvas.height - 35;
-            frequencyBall.yVelocity = 0;
+          }
+          else if(frequencyBall.y < 0)
+          {
+            frequencyBall.y = 0;
           }
 
           let radius = scale(0, stage.height, frequencyBall.y, frequencyBall.maxRadius, frequencyBall.baseRadius); 
           frequencyBall.radius = radius; 
+
+          let localMouseCoords = frequencyBall.globalToLocal(stage.mouseX, stage.mouseY);
+          if(!mouseMoving && !frequencyBall.hitTest(localMouseCoords.x, localMouseCoords.y))
+            stage.pullMode = "";
 
           frequencyBall.graphics.clear();
           frequencyBall.graphics.beginFill("Green").drawCircle(0, 0, frequencyBall.radius);
@@ -197,6 +219,7 @@
         function update(e)
         {
           let dT = e.delta / 1000;
+          mouseMoving = false;
           frequencyBall.update(dT);
           stage.update();
         }
