@@ -105,12 +105,20 @@
       {
         let osc = new Tone.Oscillator(0, "sine").toMaster().start();
 
-        let viewDimensions = getViewDimensions();
         let canvas = document.createElement("canvas");
         canvas.width = 360;
         canvas.height = 640;
-        canvas.style.height = String(viewDimensions.height) + 'px';
-        canvas.style.width = String(viewDimensions.height / canvas.height * canvas.width) + 'px';
+        resizeCanvas = () =>
+        {
+          let viewDimensions = getViewDimensions();
+          canvas.style.height = String(viewDimensions.height) + 'px';
+          canvas.style.width = String(viewDimensions.height / canvas.height * canvas.width) + 'px';
+        };
+        window.addEventListener("resize", () =>
+        {
+          resizeCanvas();
+        });
+        resizeCanvas();
         let wrapper = document.createElement("div");
         wrapper.id = "canvas-wrapper"
         wrapper.appendChild(canvas);
