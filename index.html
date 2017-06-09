@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset=utf-8>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
     <title>EaselJS Experiment#001</title>
     <style>
+      html { touch-action: manipulation }
       body { margin: 0; background: black }
-      canvas { height: 99vh }
       #canvas-wrapper { width:100%; text-align: center }
     </style>
     <script src="https://code.createjs.com/easeljs-0.8.2.min.js"></script>
@@ -91,14 +91,26 @@
         {
         }
       }
+
+      function getViewDimensions()
+      {
+        let dimensions = {
+          width: Math.max(document.documentElement.clientWidth, window.innerWidth || 0),
+          height: Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
+        }
+        return dimensions;
+      }
       
       function init()
       {
         let osc = new Tone.Oscillator(0, "sine").toMaster().start();
 
+        let viewDimensions = getViewDimensions();
         let canvas = document.createElement("canvas");
         canvas.width = 360;
         canvas.height = 640;
+        canvas.style.height = String(viewDimensions.height) + 'px';
+        canvas.style.width = String(viewDimensions.height / canvas.height * canvas.width) + 'px';
         let wrapper = document.createElement("div");
         wrapper.id = "canvas-wrapper"
         wrapper.appendChild(canvas);
@@ -108,12 +120,13 @@
         stage.height = 640;
         createjs.Touch.enable(stage);
 
+
         linearFrequencyArea = new LinearFrequencyArea(stage, canvas);
 
         var frequencyBall = new createjs.Shape();
-        frequencyBall.baseRadius = 20;
+        frequencyBall.baseRadius = 40;
         frequencyBall.radius = 20;
-        frequencyBall.maxRadius = 50;
+        frequencyBall.maxRadius = 70;
         frequencyBall.x = canvas.width / 2;
         frequencyBall.y = canvas.height - 35;
         frequencyBall.xVelocity = 0;
@@ -134,6 +147,7 @@
           {
             stage.pullMode = "frequencyBall";
           }
+          console.log("mouseDown");
         });
 
         let mouseMoving = false;
@@ -156,6 +170,40 @@
           mouseDelta._yPrev = e.stageY;
 
           mouseDelta._reset = false;
+
+          console.log(mouseDelta.x, mouseDelta.y);
+
+          frequencyBall.x = e.stageX;
+          frequencyBall.y = e.stageY;
+        //  if(stage.pullMode == "frequencyBall")
+        //  {
+        //    let x = stage.mouseX - frequencyBall.x;
+        //    let y = stage.mouseY - frequencyBall.y;
+        //    let distance = Math.sqrt(x * x + y * y);
+
+        //    if(distance == 0)
+        //    {
+        //      distance = .001;
+        //    }
+
+        //    let forceToMouse = {
+        //      xDir: x / distance,
+        //      yDir: y / distance,
+        //      force: mouseMoving ? distance : 100
+        //    }
+
+        //    if(forceToMouse.force > distance)
+        //      forceToMouse.force = distance;
+
+        //    console.group();
+        //    console.log(forceToMouse.xDir, forceToMouse.yDir, forceToMouse.force, distance);
+        //    console.groupEnd();
+        //    
+        //    frequencyBall.x += forceToMouse.xDir * forceToMouse.force;
+        //    frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
+        //  }
+
+          stage.update();
         });
 
         stage.on("stagemouseup", function(e) {
@@ -164,37 +212,15 @@
         });
 
 
+        frequencyBall.setRender = () =>
+        {
+          frequencyBall.graphics.clear();
+          frequencyBall.graphics.beginFill("Green").drawCircle(0, 0, frequencyBall.radius);
+        };
+
         frequencyBall.update = (dT) =>
         {
-          frequencyBall.y += scale(0, canvas.height, frequencyBall.y, 150, 5);
-
-          if(stage.pullMode == "frequencyBall")
-          {
-            let x = stage.mouseX - frequencyBall.x;
-            let y = stage.mouseY - frequencyBall.y;
-            let distance = Math.sqrt(x * x + y * y);
-
-            if(distance == 0)
-            {
-              distance = .001;
-            }
-
-            let forceToMouse = {
-              xDir: x / distance,
-              yDir: y / distance,
-              force: mouseMoving ? distance : 100
-            }
-
-            if(forceToMouse.force > distance)
-              forceToMouse.force = distance;
-
-            console.group();
-            console.log(forceToMouse.xDir, forceToMouse.yDir, forceToMouse.force, distance);
-            console.groupEnd();
-            
-            frequencyBall.x += forceToMouse.xDir * forceToMouse.force;
-            frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
-          }
+          //frequencyBall.y += scale(0, canvas.height, frequencyBall.y, 150, 5);
 
           if(frequencyBall.y > canvas.height - 35)
           {
@@ -212,9 +238,11 @@
           if(!mouseMoving && !frequencyBall.hitTest(localMouseCoords.x, localMouseCoords.y))
             stage.pullMode = "";
 
-          frequencyBall.graphics.clear();
-          frequencyBall.graphics.beginFill("Green").drawCircle(0, 0, frequencyBall.radius);
+          frequencyBall.setRender();
         };
+
+        frequencyBall.setRender();
+        stage.update();
 
         function update(e)
         {
@@ -224,8 +252,10 @@
           stage.update();
         }
 
+        createjs.Ticker.useRAF = true;
         createjs.Ticker.setFPS(60);
-        createjs.Ticker.addEventListener("tick", update);
+        //createjs.Ticker.addEventListener("tick", update);
+
      //     for(let i = 0; i < 12 * 8; i++)
      //     {
      //       constantFrequencyNote = createNote(i, freqMax, canvas.width);
