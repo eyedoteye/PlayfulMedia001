@@ -234,6 +234,15 @@
           {
             frequencyBall.y = frequencyBall.radius;
           }
+          
+          if(frequencyBall.x - frequencyBall.radius < 0)
+          {
+            frequencyBall.x = frequencyBall.radius; 
+          }
+          else if(frequencyBall.x + frequencyBall.radius > canvas.width)
+          {
+            frequencyBall.x = canvas.width - frequencyBall.radius;
+          }
         }
            
         frequencyBall.updateRadius = () =>
