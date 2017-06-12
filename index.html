@@ -210,6 +210,11 @@
             frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
             
             let offsetToMouse = frequencyBall.offsetToMouse;
+            if(offsetToMouse.radialRatio * frequencyBall.radius < 24)
+              offsetToMouse.radialRatio -= 0.05; 
+            if(offsetToMouse.radialRatio < 0)
+              offsetToMouse.radialRatio = 0;
+            frequencyBall.offsetToMouse = offsetToMouse; 
             frequencyBall.x += offsetToMouse.xDir * offsetToMouse.radialRatio * frequencyBall.radius;
             frequencyBall.y += offsetToMouse.yDir * offsetToMouse.radialRatio * frequencyBall.radius;
 
