@@ -172,7 +172,6 @@
         let mouseMoving = false;
         let mouseIdleTimer = 0;
         stage.on("stagemousemove", function(e) {
-          mouseIdleTimer = 0;
           if(mouseDelta._reset)
           {
             mouseDelta.x = 0;
@@ -188,6 +187,10 @@
           mouseDelta._yPrev = e.stageY;
 
           mouseDelta._reset = false;
+
+          // Removes stylus quivering noise.
+          if(Math.sqrt(mouseDelta.x * mouseDelta.x + mouseDelta.y * mouseDelta.y) > .05)
+            mouseIdleTimer = 0;
 
           if(stage.pullMode == "frequencyBall")
           {
@@ -214,6 +217,7 @@
             let gripOffset = frequencyBall.gripOffset;
             if(distance < 24)
             {
+
               let modifier = .1; // Slip to center at  X% the rate of mouse movement.
 
               let currentRadialOffset = gripOffset.radialRatio * frequencyBall.radius;
@@ -308,9 +312,9 @@
                 radialRatio: 0
               };
             }
-            else if(frequencyBall.radius > 60) // Heaviness Threshold
+            else if(frequencyBall.radius > 60 || frequencyBall.slippingAway) // Heaviness Threshold
             {
-
+              frequencyBall.slippingAway = true;
               let gripOffset = frequencyBall.gripOffset;
 
               frequencyBall.x -= gripOffset.xDir * gripOffset.radialRatio * frequencyBall.radius;
@@ -334,15 +338,20 @@
               frequencyBall.setRender();
               frequencyBall.updateGripOffset();
 
+              gripOffset = frequencyBall.gripOffset;
+              if(gripOffset.radialRatio * frequencyBall.radius < 24) //Same as in stagemousemove
+                frequencyBall.slippingAway = false;
+
               worthUpdating = true;
             }
           }
 
           if(stage.pullMode == "") // Distinct because the last piece of code can switch states.
           {
+
             let oldY = frequencyBall.y;
 
-            frequencyBall.yVelocity += 10 * dT;
+            frequencyBall.yVelocity += 20 * dT;
             frequencyBall.y += frequencyBall.yVelocity;
 
             frequencyBall.updateRadius();
