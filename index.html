@@ -128,11 +128,10 @@
         stage.height = 640;
         createjs.Touch.enable(stage);
 
-
         linearFrequencyArea = new LinearFrequencyArea(stage, canvas);
 
         var frequencyBall = new createjs.Shape();
-        frequencyBall.offsetToMouse = {
+        frequencyBall.gripOffset = {
           xDir: 0,
           yDir: 0,
           radialRatio: 0
@@ -162,7 +161,7 @@
 
             let distance = Math.sqrt(localMouseCoords.x * localMouseCoords.x + localMouseCoords.y * localMouseCoords.y);
 
-            frequencyBall.offsetToMouse = {
+            frequencyBall.gripOffset = {
               xDir: -localMouseCoords.x / distance,
               yDir: -localMouseCoords.y / distance,
               radialRatio: distance/frequencyBall.radius
@@ -192,6 +191,8 @@
 
           if(stage.pullMode == "frequencyBall")
           {
+            frequencyBall.yVelocity = 0;
+
             let x = stage.mouseX - frequencyBall.x;
             let y = stage.mouseY - frequencyBall.y;
             let distance = Math.sqrt(x * x + y * y);
@@ -210,23 +211,23 @@
             frequencyBall.x += forceToMouse.xDir * forceToMouse.force;
             frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
 
-            let offsetToMouse = frequencyBall.offsetToMouse;
+            let gripOffset = frequencyBall.gripOffset;
             if(distance < 24)
             {
               let modifier = .1; // Slip to center at  X% the rate of mouse movement.
 
-              let currentRadialOffset = offsetToMouse.radialRatio * frequencyBall.radius;
+              let currentRadialOffset = gripOffset.radialRatio * frequencyBall.radius;
               
               let mouseDeltaDistance = Math.sqrt(mouseDelta.x * mouseDelta.x + mouseDelta.y * mouseDelta.y);
-              offsetToMouse.radialRatio = (currentRadialOffset - mouseDeltaDistance * modifier) / frequencyBall.radius;
+              gripOffset.radialRatio = (currentRadialOffset - mouseDeltaDistance * modifier) / frequencyBall.radius;
 
-              if(offsetToMouse.radialRatio < 0)
-                offsetToMouse.radialRatio = 0;
-              frequencyBall.offsetToMouse = offsetToMouse;
+              if(gripOffset.radialRatio < 0)
+                gripOffset.radialRatio = 0;
+              frequencyBall.gripOffset = gripOffset;
             }              
 
-            frequencyBall.x += offsetToMouse.xDir * offsetToMouse.radialRatio * frequencyBall.radius;
-            frequencyBall.y += offsetToMouse.yDir * offsetToMouse.radialRatio * frequencyBall.radius;
+            frequencyBall.x += gripOffset.xDir * gripOffset.radialRatio * frequencyBall.radius;
+            frequencyBall.y += gripOffset.yDir * gripOffset.radialRatio * frequencyBall.radius;
 
             frequencyBall.updateRadius();
             frequencyBall.limitToBounds();
@@ -240,7 +241,6 @@
           mouseDelta._reset = true;
           stage.pullMode = "";
         });
-
 
         frequencyBall.limitToBounds = () =>
         {
@@ -275,47 +275,69 @@
           frequencyBall.graphics.beginFill("Green").drawCircle(0, 0, frequencyBall.radius);
         };
 
-        frequencyBall.slipToCenter = (dT) =>
+        frequencyBall.gripIsLost = () =>
         {
           let localMouseCoords = frequencyBall.globalToLocal(stage.mouseX, stage.mouseY);
-          let distance = Math.sqrt(localMouseCoords.x * localMouseCoords.x + localMouseCoords.y * localMouseCoords.y);
 
-          let offsetToMouse = frequencyBall.offsetToMouse;
-
-          if(distance < 24)
-          {
-            frequencyBall.x -= offsetToMouse.xDir * offsetToMouse.radialRatio * frequencyBall.radius;
-            frequencyBall.y -= offsetToMouse.yDir * offsetToMouse.radialRatio * frequencyBall.radius;
-
-            if(offsetToMouse.radialRatio < 0)
-              offsetToMouse.radialRatio = 0;
-            offsetToMouse.radialRatio -= 1 * dT; 
-
-            frequencyBall.x += offsetToMouse.xDir * offsetToMouse.radialRatio * frequencyBall.radius;
-            frequencyBall.y += offsetToMouse.yDir * offsetToMouse.radialRatio * frequencyBall.radius;
-
-            worthUpdating = true;
-            frequencyBall.setRender();
-          }
-          frequencyBall.offsetToMouse = offsetToMouse; 
-        };
+          return !frequencyBall.hitTest(localMouseCoords.x, localMouseCoords.y);
+        }; 
 
         frequencyBall.update = (dT) =>
         {
-          if(mouseIdleTimer == 0)
+          if(mouseIdleTimer > 0 && stage.pullMode == "frequencyBall")
           {
-            frequencyBall.slipToCenter(dT);            
+            if(frequencyBall.gripIsLost())
+            {
+              stage.pullMode = "";
+              frequencyBall.gripOffset = {
+                xDir: 0,
+                yDir: 0,
+                radialRatio: 0
+              };
+            }
+            else
+            {
+              let gripOffset = frequencyBall.gripOffset;
+
+              frequencyBall.x -= gripOffset.xDir * gripOffset.radialRatio * frequencyBall.radius;
+              frequencyBall.y -= gripOffset.yDir * gripOffset.radialRatio * frequencyBall.radius;
+
+              gripOffset.xDir *= gripOffset.radialRatio * frequencyBall.radius;
+              gripOffset.yDir *= gripOffset.radialRatio * frequencyBall.radius; 
+
+              gripOffset.yDir += 10 * dT; 
+
+              let distance = Math.sqrt(gripOffset.xDir * gripOffset.xDir + gripOffset.yDir * gripOffset.yDir); 
+              gripOffset.xDir /= distance;
+              gripOffset.yDir /= distance;
+              gripOffset.radialRatio = distance / frequencyBall.radius;
+
+              frequencyBall.x += gripOffset.xDir * gripOffset.radialRatio * frequencyBall.radius;
+              frequencyBall.y += gripOffset.yDir * gripOffset.radialRatio * frequencyBall.radius;
+
+              frequencyBall.updateRadius();
+              frequencyBall.limitToBounds();
+              frequencyBall.setRender();
+              worthUpdating = true;
+            }
           }
+
+          if(stage.pullMode == "") // Distinct because the last piece of code can switch states.
+          {
+            let oldY = frequencyBall.y;
+
+            frequencyBall.yVelocity += 10 * dT;
+            frequencyBall.y += frequencyBall.yVelocity;
+
+            frequencyBall.updateRadius();
+            frequencyBall.limitToBounds();
+            frequencyBall.setRender();
+
+            if(oldY != frequencyBall.y)
+              worthUpdating = true;
+          }
+
           mouseIdleTimer += dT;
-
-          //frequencyBall.y += scale(0, canvas.height, frequencyBall.y, 150, 5);
-
-          //frequencyBall.updateRadius();
-
-          //let localMouseCoords = frequencyBall.globalToLocal(stage.mouseX, stage.mouseY);
-          //if(!mouseMoving && !frequencyBall.hitTest(localMouseCoords.x, localMouseCoords.y))
-          //  stage.pullMode = "";
-
         };
 
         frequencyBall.setRender();
@@ -327,15 +349,15 @@
           worthUpdating = false;
 
           let dT = e.delta / 1000;
-  //        frequencyBall.update(dT);
+          frequencyBall.update(dT);
           
           if(worthUpdating)
             stage.update();
         }
 
-        createjs.Ticker.useRAF = true;
+    //    createjs.Ticker.useRAF = true;
         createjs.Ticker.setFPS(60);
- //       createjs.Ticker.addEventListener("tick", update);
+        createjs.Ticker.addEventListener("tick", update);
 
      //     for(let i = 0; i < 12 * 8; i++)
      //     {
