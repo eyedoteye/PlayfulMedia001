@@ -231,6 +231,7 @@
 
             frequencyBall.updateRadius();
             frequencyBall.limitToBounds();
+            frequencyBall.updateRadius();
             frequencyBall.setRender();
           }
 
@@ -282,6 +283,18 @@
           return !frequencyBall.hitTest(localMouseCoords.x, localMouseCoords.y);
         }; 
 
+        frequencyBall.updateGripOffset = () =>
+        {
+          let localMouseCoords = frequencyBall.globalToLocal(stage.mouseX, stage.mouseY);
+          let distance = Math.sqrt(localMouseCoords.x * localMouseCoords.x + localMouseCoords.y * localMouseCoords.y);
+
+          frequencyBall.gripOffset = {
+            xDir: -localMouseCoords.x / distance,
+            yDir: -localMouseCoords.y / distance,
+            radialRatio: distance/frequencyBall.radius
+          } 
+        }
+
         frequencyBall.update = (dT) =>
         {
           if(mouseIdleTimer > 0 && stage.pullMode == "frequencyBall")
@@ -297,6 +310,7 @@
             }
             else if(frequencyBall.radius > 60) // Heaviness Threshold
             {
+
               let gripOffset = frequencyBall.gripOffset;
 
               frequencyBall.x -= gripOffset.xDir * gripOffset.radialRatio * frequencyBall.radius;
@@ -318,6 +332,8 @@
               frequencyBall.updateRadius();
               frequencyBall.limitToBounds();
               frequencyBall.setRender();
+              frequencyBall.updateGripOffset();
+
               worthUpdating = true;
             }
           }
