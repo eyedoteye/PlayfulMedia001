@@ -126,7 +126,7 @@
 
         let stage = new createjs.Stage(canvas);
         stage.height = 640;
-        createjs.Touch.enable(stage);
+        createjs.Touch.enable(stage, true, true);
 
         linearFrequencyArea = new LinearFrequencyArea(stage, canvas);
 
@@ -136,9 +136,9 @@
           yDir: 0,
           radialRatio: 0
         };
-        frequencyBall.baseRadius = 20;
-        frequencyBall.radius = 20;
-        frequencyBall.maxRadius = 70;
+        frequencyBall.baseRadius = 30;
+        frequencyBall.radius = 30;
+        frequencyBall.maxRadius = 80;
         frequencyBall.x = canvas.width / 2;
         frequencyBall.y = canvas.height - 35;
         frequencyBall.xVelocity = 0;
@@ -215,10 +215,10 @@
             frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
 
             let gripOffset = frequencyBall.gripOffset;
-            if(distance < 24)
+            if(distance < frequencyBall.baseRadius * 1.2 || distance < frequencyBall.radius * .8) // grip tighten threshold
             {
 
-              let modifier = .1; // Slip to center at  X% the rate of mouse movement.
+              let modifier = .1; // Tighten grip to center at  X% the rate of mouse movement.
 
               let currentRadialOffset = gripOffset.radialRatio * frequencyBall.radius;
               
@@ -312,7 +312,7 @@
                 radialRatio: 0
               };
             }
-            else if(frequencyBall.radius > 60 || frequencyBall.slippingAway) // Heaviness Threshold
+            else if(frequencyBall.radius > 55 || frequencyBall.slippingAway) // Heaviness Threshold
             {
               frequencyBall.slippingAway = true;
               let gripOffset = frequencyBall.gripOffset;
