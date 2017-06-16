@@ -45,7 +45,13 @@ class LinearFrequencyArea
 {
   constructor(stage, canvas)
   {
-    this.y = 0;
+    this.bounds = {
+      x: 0,
+      y: 0,
+      width: canvas.width,
+      height: canvas.height - 30
+    }
+  
     this.frequencyStart = 0;
     this.frequencyEnd = 2;
     this.stage = stage;
@@ -54,12 +60,24 @@ class LinearFrequencyArea
 
     this.background.graphics.beginLinearGradientFill(
       ["black", "green"], [0.1,1],
-      0, canvas.height,
+      this.bounds.x, this.bounds.height,
       0, 0)
       .drawRect(
-        0, 0,
-        canvas.width, canvas.height)
+        this.bounds.x, this.bounds.y,
+        this.bounds.width, this.bounds.height)
     .endFill();
+  }
+
+  getBounds()
+  {
+    let bounds = {
+      top: this.bounds.y,
+      bottom: this.bounds.y + this.bounds.height,
+      left: this.bounds.x,
+      right: this.bounds.y + this.bounds.width
+    };
+
+    return bounds;
   }
 }
 
@@ -233,24 +251,33 @@ function init()
 
   frequencyBall.limitToBounds = () =>
   {
-    if(frequencyBall.y > canvas.height - frequencyBall.minRadius)
+    let bounds = linearFrequencyArea.getBounds();
+
+    if(frequencyBall.y + frequencyBall.minRadius > bounds.bottom)
     {
-      frequencyBall.y = canvas.height - frequencyBall.minRadius;
+      frequencyBall.y = bounds.bottom - frequencyBall.minRadius;
     }
-    else if(frequencyBall.y - frequencyBall.radius < 0)
+    else if(frequencyBall.y - frequencyBall.radius < bounds.top)
     {
       frequencyBall.y = frequencyBall.radius;
     }
     
-    if(frequencyBall.x - frequencyBall.radius < 0)
+    if(frequencyBall.x - frequencyBall.radius < bounds.left)
     {
       frequencyBall.x = frequencyBall.radius; 
     }
-    else if(frequencyBall.x + frequencyBall.radius > canvas.width)
+    else if(frequencyBall.x + frequencyBall.radius > bounds.right)
     {
-      frequencyBall.x = canvas.width - frequencyBall.radius;
+      frequencyBall.x = bounds.right - frequencyBall.radius;
     }
   }
+
+  frequencyBall.isOnGround = () =>
+  {
+    let bounds = linearFrequencyArea.getBounds();
+    return frequencyBall.y >= bounds.bottom - frequencyBall.minRadius; 
+  }
+
      
   frequencyBall.updateRadius = () =>
   {
@@ -285,11 +312,6 @@ function init()
       yDir: -localMouseCoords.y / distance,
       radialRatio: distance/frequencyBall.radius
     } 
-  }
-
-  frequencyBall.isOnGround = () =>
-  {
-    return frequencyBall.y >= canvas.height - frequencyBall.minRadius; 
   }
 
   frequencyBall.update = (dT) =>
