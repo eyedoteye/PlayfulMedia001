@@ -238,6 +238,7 @@ function init()
       frequencyBall.updateRadius();
       frequencyBall.limitToBounds();
       frequencyBall.updateRadius();
+      frequencyBall.limitToBounds();
       frequencyBall.setRender();
     }
 
