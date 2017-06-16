@@ -48,9 +48,9 @@ class LinearFrequencyArea
     this.y = 0;
     this.frequencyStart = 0;
     this.frequencyEnd = 2;
-    this.linkToStage = stage;
+    this.stage = stage;
     this.background = new createjs.Shape();
-    this.linkToStage.addChild(this.background);
+    this.stage.addChild(this.background);
 
     this.background.graphics.beginLinearGradientFill(
       ["black", "green"], [0.1,1],
@@ -121,11 +121,10 @@ function init()
     yDir: 0,
     radialRatio: 0
   };
-  frequencyBall.baseRadius = 30;
-  frequencyBall.radius = 30;
+  frequencyBall.minRadius = 30;
   frequencyBall.maxRadius = 80;
   frequencyBall.x = canvas.width / 2;
-  frequencyBall.y = canvas.height - 35;
+  frequencyBall.y = frequencyBall.maxRadius + 30;
   frequencyBall.xVelocity = 0;
   frequencyBall.yVelocity = 0;
   stage.addChild(frequencyBall);
@@ -200,7 +199,7 @@ function init()
       frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
 
       let gripOffset = frequencyBall.gripOffset;
-      if(distance < frequencyBall.baseRadius * 1.2 || distance < frequencyBall.radius * .8) // grip tighten threshold
+      if(distance < frequencyBall.minRadius * 1.2 || distance < frequencyBall.radius * .8) // grip tighten threshold
       {
 
         let modifier = .1; // Tighten grip to center at  X% the rate of mouse movement.
@@ -234,9 +233,9 @@ function init()
 
   frequencyBall.limitToBounds = () =>
   {
-    if(frequencyBall.y > canvas.height - 35)
+    if(frequencyBall.y > canvas.height - frequencyBall.minRadius)
     {
-      frequencyBall.y = canvas.height - 35;
+      frequencyBall.y = canvas.height - frequencyBall.minRadius;
     }
     else if(frequencyBall.y - frequencyBall.radius < 0)
     {
@@ -255,8 +254,12 @@ function init()
      
   frequencyBall.updateRadius = () =>
   {
-    let radius = scale(0, stage.height - 35, frequencyBall.y, frequencyBall.maxRadius, frequencyBall.baseRadius); 
+    let radius = scale(
+      0, canvas.height - frequencyBall.minRadius,
+      frequencyBall.y,
+      frequencyBall.maxRadius, frequencyBall.minRadius); 
     frequencyBall.radius = radius; 
+    console.log(canvas.height - frequencyBall.minRadius, frequencyBall.y, radius);
   };
 
   frequencyBall.setRender = () =>
@@ -282,6 +285,11 @@ function init()
       yDir: -localMouseCoords.y / distance,
       radialRatio: distance/frequencyBall.radius
     } 
+  }
+
+  frequencyBall.isOnGround = () =>
+  {
+    return frequencyBall.y >= canvas.height - frequencyBall.minRadius; 
   }
 
   frequencyBall.update = (dT) =>
@@ -331,12 +339,7 @@ function init()
       }
     }
 
-    frequencyBall.isOnGround = () =>
-    {
-      return frequencyBall.y == canvas.height - 35; // Need To take care of this magic number.
-    }
-
-    if(stage.pullMode == "") // Distinct because the last piece of code can switch states.
+    if(stage.pullMode == "" && !frequencyBall.isOnGround()) // Distinct because the last piece of code can switch states.
     {
 
       let oldY = frequencyBall.y;
@@ -355,6 +358,7 @@ function init()
     mouseIdleTimer += dT;
   };
 
+  frequencyBall.updateRadius();
   frequencyBall.setRender();
   stage.update();
 
@@ -373,6 +377,9 @@ function init()
   let worthUpdating = false;
   function update(e)
   {
+    if(!stage.mouseInBounds)
+      stage.pullMode = "";
+
     worthUpdating = false;
 
     let dT = e.delta / 1000;
