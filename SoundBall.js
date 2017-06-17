@@ -45,7 +45,7 @@ class LinearFrequencyArea
 {
   constructor(stage, canvas)
   {
-    this.bounds = {
+    this.bbox = {
       x: 0,
       y: 0,
       width: canvas.width,
@@ -60,24 +60,100 @@ class LinearFrequencyArea
 
     this.background.graphics.beginLinearGradientFill(
       ["black", "green"], [0.1,1],
-      this.bounds.x, this.bounds.height,
+      this.bbox.x, this.bbox.height,
       0, 0)
       .drawRect(
-        this.bounds.x, this.bounds.y,
-        this.bounds.width, this.bounds.height)
+        this.bbox.x, this.bbox.y,
+        this.bbox.width, this.bbox.height)
     .endFill();
   }
 
   getBounds()
   {
     let bounds = {
-      top: this.bounds.y,
-      bottom: this.bounds.y + this.bounds.height,
-      left: this.bounds.x,
-      right: this.bounds.y + this.bounds.width
+      top: this.bbox.y,
+      bottom: this.bbox.y + this.bbox.height,
+      left: this.bbox.x,
+      right: this.bbox.x + this.bbox.width
     };
 
     return bounds;
+  }
+}
+
+class PianoRollArea
+{
+  constructor(stage, canvas, linearFrequencyArea)
+  {
+    let linearFrequencyAreaBounds = linearFrequencyArea.getBounds();
+    this.bbox = {
+      x: 0,
+      y: linearFrequencyAreaBounds.bottom - 30, //Cover Half the ball
+      width: canvas.width,
+      height: canvas.height - linearFrequencyAreaBounds.bottom + 30
+    };
+
+    this.noteStart = 4 - 12 * 2;
+    this.noteCount = 2;
+
+    this.noteHeight = 20;
+    this.noteWidth = 40;
+
+    this.stage = stage;
+    this.background = new createjs.Shape();
+    this.stage.addChild(this.background);
+    this.setGraphics();
+  }
+
+  isPointInBounds(x, y)
+  {
+    let bounds = this.getBounds();
+    if(x < bounds.left || x > bounds.right)
+      return false;
+    if(y < bounds.top || y > bounds.bottom)
+      return false;
+
+    return true;
+  }
+
+  getBounds()
+  {
+    let bounds = {
+      top: this.bbox.y,
+      bottom: this.bbox.y + this.bbox.height,
+      left: this.bbox.x,
+      right: this.bbox.x + this.bbox.width
+    };
+
+    return bounds;
+  }
+
+  setGraphics()
+  {
+    let bounds = this.getBounds();
+
+    this.background.graphics.beginFill("black")
+      .drawRect(
+        this.bbox.x, this.bbox.y,
+        this.bbox.width, this.bbox.height)
+      .endFill();
+  
+    for(let i = 0; i < this.noteCount; ++i)
+    {
+      let noteY = bounds.top + this.noteHeight * i; 
+
+      this.background.graphics.beginFill("white")
+        .drawRect(
+          this.bbox.x, noteY,
+          this.bbox.width, 1)
+        .endFill();
+      
+      this.background.graphics.beginFill("white")
+        .drawRect(
+          bounds.right - this.noteWidth, noteY - this.noteHeight / 2 + 1,
+          this.noteWidth, this.noteHeight - 1)
+        .endFill();
+    } 
   }
 }
 
@@ -123,7 +199,7 @@ function init()
   });
   resizeCanvas();
   let wrapper = document.createElement("div");
-  wrapper.id = "canvas-wrapper"
+  wrapper.id = "canvas-wrapper";
   wrapper.appendChild(canvas);
   document.body.appendChild(wrapper);
 
@@ -146,6 +222,8 @@ function init()
   frequencyBall.xVelocity = 0;
   frequencyBall.yVelocity = 0;
   stage.addChild(frequencyBall);
+
+  pianoRollArea = new PianoRollArea(stage, canvas, linearFrequencyArea);
 
   let mouseDelta = {
     x: 0,
@@ -194,52 +272,59 @@ function init()
     if(Math.sqrt(mouseDelta.x * mouseDelta.x + mouseDelta.y * mouseDelta.y) > .05)
       mouseIdleTimer = 0;
 
-    if(stage.pullMode == "frequencyBall")
+    if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY)) 
     {
-      frequencyBall.yVelocity = 0;
-
-      let x = stage.mouseX - frequencyBall.x;
-      let y = stage.mouseY - frequencyBall.y;
-      let distance = Math.sqrt(x * x + y * y);
-
-      if(distance == 0)
+      console.log(stage.mouseX, stage.mouseY);
+    }
+    else
+    {
+      if(stage.pullMode == "frequencyBall")
       {
-        distance = .001;
+        frequencyBall.yVelocity = 0;
+
+        let x = stage.mouseX - frequencyBall.x;
+        let y = stage.mouseY - frequencyBall.y;
+        let distance = Math.sqrt(x * x + y * y);
+
+        if(distance == 0)
+        {
+          distance = .001;
+        }
+
+        let forceToMouse = {
+          xDir: x / distance,
+          yDir: y / distance,
+          force: distance
+        }
+
+        frequencyBall.x += forceToMouse.xDir * forceToMouse.force;
+        frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
+
+        let gripOffset = frequencyBall.gripOffset;
+        if(distance < frequencyBall.minRadius * 1.2 || distance < frequencyBall.radius * .8) // grip tighten threshold
+        {
+
+          let modifier = .1; // Tighten grip to center at  X% the rate of mouse movement.
+
+          let currentRadialOffset = gripOffset.radialRatio * frequencyBall.radius;
+          
+          let mouseDeltaDistance = Math.sqrt(mouseDelta.x * mouseDelta.x + mouseDelta.y * mouseDelta.y);
+          gripOffset.radialRatio = (currentRadialOffset - mouseDeltaDistance * modifier) / frequencyBall.radius;
+
+          if(gripOffset.radialRatio < 0)
+            gripOffset.radialRatio = 0;
+          frequencyBall.gripOffset = gripOffset;
+        }              
+
+        frequencyBall.x += gripOffset.xDir * gripOffset.radialRatio * frequencyBall.radius;
+        frequencyBall.y += gripOffset.yDir * gripOffset.radialRatio * frequencyBall.radius;
+
+        frequencyBall.updateRadius();
+        frequencyBall.limitToBounds();
+        frequencyBall.updateRadius();
+        frequencyBall.limitToBounds();
+        frequencyBall.setRender();
       }
-
-      let forceToMouse = {
-        xDir: x / distance,
-        yDir: y / distance,
-        force: distance
-      }
-
-      frequencyBall.x += forceToMouse.xDir * forceToMouse.force;
-      frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
-
-      let gripOffset = frequencyBall.gripOffset;
-      if(distance < frequencyBall.minRadius * 1.2 || distance < frequencyBall.radius * .8) // grip tighten threshold
-      {
-
-        let modifier = .1; // Tighten grip to center at  X% the rate of mouse movement.
-
-        let currentRadialOffset = gripOffset.radialRatio * frequencyBall.radius;
-        
-        let mouseDeltaDistance = Math.sqrt(mouseDelta.x * mouseDelta.x + mouseDelta.y * mouseDelta.y);
-        gripOffset.radialRatio = (currentRadialOffset - mouseDeltaDistance * modifier) / frequencyBall.radius;
-
-        if(gripOffset.radialRatio < 0)
-          gripOffset.radialRatio = 0;
-        frequencyBall.gripOffset = gripOffset;
-      }              
-
-      frequencyBall.x += gripOffset.xDir * gripOffset.radialRatio * frequencyBall.radius;
-      frequencyBall.y += gripOffset.yDir * gripOffset.radialRatio * frequencyBall.radius;
-
-      frequencyBall.updateRadius();
-      frequencyBall.limitToBounds();
-      frequencyBall.updateRadius();
-      frequencyBall.limitToBounds();
-      frequencyBall.setRender();
     }
 
     stage.update();
@@ -287,7 +372,6 @@ function init()
       frequencyBall.y,
       frequencyBall.maxRadius, frequencyBall.minRadius); 
     frequencyBall.radius = radius; 
-    console.log(canvas.height - frequencyBall.minRadius, frequencyBall.y, radius);
   };
 
   frequencyBall.setRender = () =>
@@ -388,8 +472,6 @@ function init()
 
   let C2Frequency = getNoteFrequency(440, 4 - 12 * 2);
   let C4Frequency = getNoteFrequency(440, 4 - 12);
-  console.log(C2Frequency);
-  console.log(C4Frequency);
   let currentFrequency = 0; 
 
   let getFrequencyAtHeight = () => getFrequencyOfPositionInLinearRange(
@@ -409,8 +491,6 @@ function init()
     frequencyBall.update(dT);
 
     let newCurrentFrequency = getFrequencyAtHeight();
-    if(newCurrentFrequency != currentFrequency)
-     console.log(newCurrentFrequency);
 
     currentFrequency = newCurrentFrequency; 
     osc.frequency.value = newCurrentFrequency;
@@ -431,7 +511,7 @@ function init()
 //     for(let i = 0; i < 12 * 8; i++)
 //     {
 //       constantFrequencyNote = createNote(i, freqMax, canvas.width);
-//       constantNotewidthNote = createNoteWithConstantWidth(i, freqMax, noteWidth);
+//       constantNotewidthNote = createNoteWithConstantWidth(i, freqMax, noteHeight);
 //
 //       noteRight = scale(0, 1, t, constantFrequencyNote.position, constantNotewidthNote.right);
 //
@@ -444,8 +524,8 @@ function init()
 //   circle.on("pressmove", function(e) {
 //     e.target.x = e.stageX;
 //     e.target.y = e.stageY;
-//     osc.frequency.value = getFrequencyFromPositionAndT(frequencyModeToggle.t, e.stageX, halfNoteStart, noteWidth);
-//     text.text = getFrequencyFromPositionAndT(frequencyModeToggle.t, circle.x, halfNoteStart, noteWidth);
+//     osc.frequency.value = getFrequencyFromPositionAndT(frequencyModeToggle.t, e.stageX, halfNoteStart, noteHeight);
+//     text.text = getFrequencyFromPositionAndT(frequencyModeToggle.t, circle.x, halfNoteStart, noteHeight);
 //     // osc.volume.value = scale(0, canvas.height, e.stageY, 0, -40);
 //   });
 //   
