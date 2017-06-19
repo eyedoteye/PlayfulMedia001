@@ -49,7 +49,7 @@ class LinearFrequencyArea
       x: 0,
       y: 0,
       width: canvas.width,
-      height: canvas.height - 30
+      height: canvas.height
     }
   
     this.frequencyStart = 0;
@@ -88,9 +88,9 @@ class PianoRollArea
     let linearFrequencyAreaBounds = linearFrequencyArea.getBounds();
     this.bbox = {
       x: 0,
-      y: linearFrequencyAreaBounds.bottom - 30, //Cover Half the ball
+      y: linearFrequencyAreaBounds.bottom - 40, //Cover Half the ball
       width: canvas.width,
-      height: canvas.height - linearFrequencyAreaBounds.bottom + 30
+      height: canvas.height - linearFrequencyAreaBounds.bottom + 30 + 20
     };
 
     this.noteStart = 4 - 12 * 2;
@@ -116,6 +116,39 @@ class PianoRollArea
     return true;
   }
 
+  isPointInNoteBounds(x, y, halfSteps)
+  {
+    let bounds = this.getBounds();
+    let noteY = bounds.top + this.noteHeight / 2 + this.noteHeight * halfSteps;
+    console.log(noteY);
+    
+    let noteBounds = {
+      left: bounds.right - this.noteWidth,
+      top: noteY - this.noteHeight / 2 + 1
+    };
+    noteBounds.right = bounds.right;
+    noteBounds.bottom = noteBounds.top + this.noteHeight - 1;
+    console.log(noteBounds);
+
+    if(x < noteBounds.left || x > noteBounds.right)
+      return false;
+    if(y < noteBounds.top || y > noteBounds.bottom)
+      return false;
+
+    return true;
+  }
+
+  getNoteFrequencyOfPoint(x, y)
+  {
+    for(let i = 0; i < this.noteCount; ++i)
+    {
+      if(this.isPointInNoteBounds(x, y, i))
+        return getNoteFrequency(440, this.noteStart + this.noteCount - i);
+    } 
+
+    return 0;
+  } 
+
   getBounds()
   {
     let bounds = {
@@ -134,13 +167,13 @@ class PianoRollArea
 
     this.background.graphics.beginFill("black")
       .drawRect(
-        this.bbox.x, this.bbox.y,
+        this.bbox.x, this.bbox.y + this.noteHeight / 2,
         this.bbox.width, this.bbox.height)
       .endFill();
   
     for(let i = 0; i < this.noteCount; ++i)
     {
-      let noteY = bounds.top + this.noteHeight * i; 
+      let noteY = bounds.top + this.noteHeight / 2 + this.noteHeight * i; 
 
       this.background.graphics.beginFill("white")
         .drawRect(
@@ -181,6 +214,12 @@ function getViewDimensions()
 
 function init()
 {
+  let pianoosc = new Tone.PolySynth(6, Tone.Synth, {
+          "oscillator" : {
+                    "partials" : [0, 2, 3, 4],
+                  }
+        }).toMaster();
+
   let osc = new Tone.Oscillator(0, "sine").toMaster().start();
   osc.volume.value = -15;
 
@@ -247,6 +286,13 @@ function init()
         radialRatio: distance/frequencyBall.radius
       } 
     }
+
+    if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY))
+    {
+      let frequency = pianoRollArea.getNoteFrequencyOfPoint(stage.mouseX, stage.mouseY);
+      console.log(frequency);
+      pianoosc.triggerAttackRelease(frequency, "8n");
+    }
   });
 
   let mouseMoving = false;
@@ -274,7 +320,11 @@ function init()
 
     if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY)) 
     {
-      console.log(stage.mouseX, stage.mouseY);
+      if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY))
+      {
+        let frequency = pianoRollArea.getNoteFrequencyOfPoint(stage.mouseX, stage.mouseY);
+        console.log(frequency, stage.mouseX, stage.mouseY);
+      }
     }
     else
     {
