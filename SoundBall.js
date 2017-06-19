@@ -85,24 +85,39 @@ class PianoRollArea
 {
   constructor(stage, canvas, linearFrequencyArea)
   {
+    this.noteHeight = 20;
+    this.noteWidth = 40;
+
     let linearFrequencyAreaBounds = linearFrequencyArea.getBounds();
     this.bbox = {
       x: 0,
-      y: linearFrequencyAreaBounds.bottom - 40, //Cover Half the ball
+      y: linearFrequencyAreaBounds.bottom,
       width: canvas.width,
-      height: canvas.height - linearFrequencyAreaBounds.bottom + 30 + 20
+      height: canvas.height - linearFrequencyAreaBounds.bottom 
     };
 
     this.noteStart = 4 - 12 * 2;
-    this.noteCount = 2;
-
-    this.noteHeight = 20;
-    this.noteWidth = 40;
+    this.noteCount = 0;
 
     this.stage = stage;
     this.background = new createjs.Shape();
     this.stage.addChild(this.background);
-    this.setGraphics();
+    this.computeGraphics();
+  }
+
+  addTopNotes(count)
+  {
+    for(let i = 0; i < count; ++i)
+      this.addTopNote();
+  }
+  
+  addTopNote()
+  {
+    this.bbox.y -= this.noteHeight;
+    this.bbox.height += this.noteHeight;
+    ++this.noteCount;
+
+    this.computeGraphics();
   }
 
   isPointInBounds(x, y)
@@ -161,7 +176,7 @@ class PianoRollArea
     return bounds;
   }
 
-  setGraphics()
+  computeGraphics()
   {
     let bounds = this.getBounds();
 
@@ -187,19 +202,6 @@ class PianoRollArea
           this.noteWidth, this.noteHeight - 1)
         .endFill();
     } 
-  }
-}
-
-class Note
-{
-  constructor(noteAsString, halfStepsFromA4)
-  {
-    this.noteString = noteString;
-    this.frequency = getNoteFrequency(halfStepsFromA4); 
-  }
-
-  getPosition()
-  {
   }
 }
 
@@ -515,11 +517,6 @@ function init()
     mouseIdleTimer += dT;
   };
 
-  frequencyBall.updateRadius();
-  frequencyBall.setRender();
-  stage.update();
-
-
   let C2Frequency = getNoteFrequency(440, 4 - 12 * 2);
   let C4Frequency = getNoteFrequency(440, 4 - 12);
   let currentFrequency = 0; 
@@ -554,46 +551,12 @@ function init()
       stage.update();
   }
 
-//  createjs.Ticker.useRAF = true;
   createjs.Ticker.setFPS(60);
   createjs.Ticker.addEventListener("tick", update);
 
-//     for(let i = 0; i < 12 * 8; i++)
-//     {
-//       constantFrequencyNote = createNote(i, freqMax, canvas.width);
-//       constantNotewidthNote = createNoteWithConstantWidth(i, freqMax, noteHeight);
-//
-//       noteRight = scale(0, 1, t, constantFrequencyNote.position, constantNotewidthNote.right);
-//
-//       background.graphics.beginStroke("white")
-//                            .moveTo(noteRight, 0).lineTo(noteRight, canvas.height)
-//                            .endStroke();
-//     }
-//   };
-//
-//   circle.on("pressmove", function(e) {
-//     e.target.x = e.stageX;
-//     e.target.y = e.stageY;
-//     osc.frequency.value = getFrequencyFromPositionAndT(frequencyModeToggle.t, e.stageX, halfNoteStart, noteHeight);
-//     text.text = getFrequencyFromPositionAndT(frequencyModeToggle.t, circle.x, halfNoteStart, noteHeight);
-//     // osc.volume.value = scale(0, canvas.height, e.stageY, 0, -40);
-//   });
-//   
-//   stage.mouseMoveOutside = true;
-//   stage.on("stagemousemove", function(e) {
-//     var localMouseCoords = circle.globalToLocal(e.rawX, e.rawY);
-//     circle.alpha = scale(0, canvas.width * .85, distance(0,0,localMouseCoords.x, localMouseCoords.y), 1, 0);
-//   });
-//
-//   function update(e)
-//   { 
-//     stage.update();
-//   }
-//   
-//   var halfNoteStart = 12 * 0;
-//   setBackground(background, frequencyModeToggle.t);
-//   setFrequencyMode(frequencyModeToggle.t);
-//
-//   createjs.Ticker.setFPS(60);
-//   createjs.Ticker.addEventListener("tick", update);
+  pianoRollArea.addTopNotes(1);
+  frequencyBall.updateRadius();
+  frequencyBall.setRender();
+  stage.update();
+
 }
