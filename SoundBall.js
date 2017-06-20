@@ -88,8 +88,7 @@ class LinearFrequencyArea
 
   popBottomNote()
   {
-    this.bbox.height -= 20; //NoteHeight, need a better way to sync this.
-    console.log(this.bbox.height);
+    //this.bbox.height -= 20; //NoteHeight, need a better way to sync this.
     this.frequencyStart = getNoteFrequency(440, this.noteBottom);
     this.computeGraphics();
   }
@@ -361,7 +360,7 @@ function init()
         let frequency = pianoRollArea.getNoteFrequencyOfPoint(stage.mouseX, stage.mouseY);
       }
     }
-    else
+    
     {
       if(stage.pullMode == "frequencyBall")
       {
@@ -404,10 +403,8 @@ function init()
         frequencyBall.x += gripOffset.xDir * gripOffset.radialRatio * frequencyBall.radius;
         frequencyBall.y += gripOffset.yDir * gripOffset.radialRatio * frequencyBall.radius;
 
-        frequencyBall.updateRadius();
         frequencyBall.limitToBounds();
         frequencyBall.updateRadius();
-        frequencyBall.limitToBounds();
         frequencyBall.setRender();
       }
     }
@@ -423,10 +420,11 @@ function init()
   frequencyBall.limitToBounds = () =>
   {
     let bounds = linearFrequencyArea.getBounds();
+    let pianoTopBound = pianoRollArea.getBounds().top + 10;
 
-    if(frequencyBall.y + frequencyBall.minRadius > bounds.bottom)
+    if(frequencyBall.y > pianoTopBound)
     {
-      frequencyBall.y = bounds.bottom - frequencyBall.minRadius;
+      frequencyBall.y = pianoTopBound;
     }
     else if(frequencyBall.y - frequencyBall.radius < bounds.top)
     {
@@ -445,10 +443,9 @@ function init()
 
   frequencyBall.isOnGround = () =>
   {
-    let bounds = linearFrequencyArea.getBounds();
-    return frequencyBall.y >= bounds.bottom - frequencyBall.minRadius; 
+    let bounds = pianoRollArea.getBounds();
+    return frequencyBall.y >= bounds.top; 
   }
-
      
   frequencyBall.updateRadius = () =>
   {
@@ -533,7 +530,6 @@ function init()
 
     if(stage.pullMode == "" && !frequencyBall.isOnGround()) // Distinct because the last piece of code can switch states.
     {
-
       let oldY = frequencyBall.y;
 
       frequencyBall.yVelocity += 20 * dT;
@@ -588,7 +584,7 @@ function init()
     pianoRollArea.addTopNotes(count);
     linearFrequencyArea.popBottomNotes(count);
   };
-  shiftAreasByNotes(5);
+  shiftAreasByNotes(8);
   frequencyBall.updateRadius();
   frequencyBall.setRender();
   stage.update();
