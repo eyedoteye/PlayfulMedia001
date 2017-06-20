@@ -49,23 +49,29 @@ class LinearFrequencyArea
       x: 0,
       y: 0,
       width: canvas.width,
-      height: canvas.height
+      height: canvas.height + 30
     }
   
-    this.frequencyStart = 0;
-    this.frequencyEnd = 2;
+    this.noteBottom = 4 - 12 * 2; // Note: I should find a better way to sync this.
+    this.frequencyStart = getNoteFrequency(440, this.noteBottom);
+    this.frequencyEnd = getNoteFrequency(440, 4 - 12);
     this.stage = stage;
     this.background = new createjs.Shape();
     this.stage.addChild(this.background);
 
-    this.background.graphics.beginLinearGradientFill(
-      ["black", "green"], [0.1,1],
-      this.bbox.x, this.bbox.height,
-      0, 0)
-      .drawRect(
-        this.bbox.x, this.bbox.y,
-        this.bbox.width, this.bbox.height)
-    .endFill();
+    this.computeGraphics();
+  }
+
+  getFrequencyOfPosition(y)
+  {
+    let bounds = this.getBounds();
+
+    let frequency = getFrequencyOfPositionInLinearRange(
+      this.frequencyStart, this.frequencyEnd,
+      bounds.bottom, bounds.top,
+      y); 
+
+    return frequency;
   }
 
   getBounds()
@@ -79,6 +85,32 @@ class LinearFrequencyArea
 
     return bounds;
   }
+
+  popBottomNote()
+  {
+    this.bbox.height -= 20; //NoteHeight, need a better way to sync this.
+    console.log(this.bbox.height);
+    this.frequencyStart = getNoteFrequency(440, this.noteBottom);
+    this.computeGraphics();
+  }
+
+  popBottomNotes(count)
+  {
+    for(let i = 0; i < count; ++i)
+      this.popBottomNote();
+  }
+
+  computeGraphics()
+  {
+    this.background.graphics.beginLinearGradientFill(
+      ["black", "green"], [0.1,1],
+      this.bbox.x, this.bbox.height,
+      0, 0)
+      .drawRect(
+        this.bbox.x, this.bbox.y,
+        this.bbox.width, this.bbox.height)
+    .endFill();
+  }
 }
 
 class PianoRollArea
@@ -91,9 +123,9 @@ class PianoRollArea
     let linearFrequencyAreaBounds = linearFrequencyArea.getBounds();
     this.bbox = {
       x: 0,
-      y: linearFrequencyAreaBounds.bottom,
+      y: canvas.height,
       width: canvas.width,
-      height: canvas.height - linearFrequencyAreaBounds.bottom 
+      height: 0
     };
 
     this.noteStart = 4 - 12 * 2;
@@ -135,7 +167,6 @@ class PianoRollArea
   {
     let bounds = this.getBounds();
     let noteY = bounds.top + this.noteHeight / 2 + this.noteHeight * halfSteps;
-    console.log(noteY);
     
     let noteBounds = {
       left: bounds.right - this.noteWidth,
@@ -143,7 +174,6 @@ class PianoRollArea
     };
     noteBounds.right = bounds.right;
     noteBounds.bottom = noteBounds.top + this.noteHeight - 1;
-    console.log(noteBounds);
 
     if(x < noteBounds.left || x > noteBounds.right)
       return false;
@@ -158,7 +188,10 @@ class PianoRollArea
     for(let i = 0; i < this.noteCount; ++i)
     {
       if(this.isPointInNoteBounds(x, y, i))
-        return getNoteFrequency(440, this.noteStart + this.noteCount - i);
+      {
+        let frequency = getNoteFrequency(440, this.noteStart + this.noteCount - i);
+        return frequency;
+      }
     } 
 
     return 0;
@@ -292,8 +325,9 @@ function init()
     if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY))
     {
       let frequency = pianoRollArea.getNoteFrequencyOfPoint(stage.mouseX, stage.mouseY);
-      console.log(frequency);
-      pianoosc.triggerAttackRelease(frequency, "8n");
+
+      if(frequency > 0)
+        pianoosc.triggerAttackRelease(frequency, "8n");
     }
   });
 
@@ -325,7 +359,6 @@ function init()
       if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY))
       {
         let frequency = pianoRollArea.getNoteFrequencyOfPoint(stage.mouseX, stage.mouseY);
-        console.log(frequency, stage.mouseX, stage.mouseY);
       }
     }
     else
@@ -521,10 +554,7 @@ function init()
   let C4Frequency = getNoteFrequency(440, 4 - 12);
   let currentFrequency = 0; 
 
-  let getFrequencyAtHeight = () => getFrequencyOfPositionInLinearRange(
-    C2Frequency, C4Frequency,
-    canvas.height, -canvas.height,
-    frequencyBall.y);
+  let getFrequencyAtHeight = () => linearFrequencyArea.getFrequencyOfPosition(frequencyBall.y);
 
   let worthUpdating = false;
   function update(e)
@@ -554,7 +584,11 @@ function init()
   createjs.Ticker.setFPS(60);
   createjs.Ticker.addEventListener("tick", update);
 
-  pianoRollArea.addTopNotes(1);
+  let shiftAreasByNotes = (count) => {
+    pianoRollArea.addTopNotes(count);
+    linearFrequencyArea.popBottomNotes(count);
+  };
+  shiftAreasByNotes(5);
   frequencyBall.updateRadius();
   frequencyBall.setRender();
   stage.update();
