@@ -114,12 +114,11 @@ class LinearFrequencyArea
 
 class PianoRollArea
 {
-  constructor(stage, canvas, linearFrequencyArea)
+  constructor(stage, canvas)
   {
     this.noteHeight = 40;
     this.noteWidth = this.noteHeight * 2;
 
-    let linearFrequencyAreaBounds = linearFrequencyArea.getBounds();
     this.bbox = {
       x: 0,
       y: canvas.height,
@@ -249,10 +248,10 @@ function getViewDimensions()
 function init()
 {
   let pianoosc = new Tone.PolySynth(6, Tone.Synth, {
-          "oscillator" : {
-                    "partials" : [0, 2, 3, 4],
-                  }
-        }).toMaster();
+        "oscillator" : {
+                  "partials" : [0, 2, 3, 4],
+                }
+      }).toMaster();
 
   let osc = new Tone.Oscillator(0, "sine").toMaster().start();
   osc.volume.value = -15;
@@ -296,7 +295,7 @@ function init()
   frequencyBall.yVelocity = 0;
   stage.addChild(frequencyBall);
 
-  pianoRollArea = new PianoRollArea(stage, canvas, linearFrequencyArea);
+  pianoRollArea = new PianoRollArea(stage, canvas);
 
   let mouseDelta = {
     x: 0,
