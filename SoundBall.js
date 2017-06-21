@@ -53,7 +53,6 @@ class LinearFrequencyArea
     }
   
     this.noteBottom = 4 - 12 * 2; // Note: I should find a better way to sync this.
-    this.frequencyStart = getNoteFrequency(440, this.noteBottom);
     this.frequencyEnd = getNoteFrequency(440, 4 - 12);
     this.stage = stage;
     this.background = new createjs.Shape();
@@ -66,8 +65,9 @@ class LinearFrequencyArea
   {
     let bounds = this.getBounds();
 
+
     let frequency = getFrequencyOfPositionInLinearRange(
-      this.frequencyStart, this.frequencyEnd,
+      getNoteFrequency(440, this.noteBottom), this.frequencyEnd,
       bounds.bottom, bounds.top,
       y); 
 
@@ -89,7 +89,7 @@ class LinearFrequencyArea
   popBottomNote()
   {
     //this.bbox.height -= 20; //NoteHeight, need a better way to sync this.
-    this.frequencyStart = getNoteFrequency(440, this.noteBottom);
+    this.noteBottom++;
     this.computeGraphics();
   }
 
@@ -360,7 +360,7 @@ function init()
         let frequency = pianoRollArea.getNoteFrequencyOfPoint(stage.mouseX, stage.mouseY);
       }
     }
-    
+
     {
       if(stage.pullMode == "frequencyBall")
       {
@@ -405,6 +405,8 @@ function init()
 
         frequencyBall.limitToBounds();
         frequencyBall.updateRadius();
+        frequencyBall.limitToBounds();
+        frequencyBall.updateRadius();
         frequencyBall.setRender();
       }
     }
@@ -443,8 +445,9 @@ function init()
 
   frequencyBall.isOnGround = () =>
   {
-    let bounds = pianoRollArea.getBounds();
-    return frequencyBall.y >= bounds.top; 
+    //Note: Find a better way to sync this.
+    let pianoTopBound = pianoRollArea.getBounds().top + 10;
+    return frequencyBall.y >= pianoTopBound; 
   }
      
   frequencyBall.updateRadius = () =>
@@ -584,7 +587,7 @@ function init()
     pianoRollArea.addTopNotes(count);
     linearFrequencyArea.popBottomNotes(count);
   };
-  shiftAreasByNotes(8);
+  shiftAreasByNotes(12);
   frequencyBall.updateRadius();
   frequencyBall.setRender();
   stage.update();
