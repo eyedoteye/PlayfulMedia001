@@ -571,7 +571,7 @@ function init()
     currentFrequency = newCurrentFrequency; 
     osc.frequency.value = newCurrentFrequency;
 
-    if(frequencyBall.isOnGround())
+    if(frequencyBall.isOnGround() && stage.pullMode == "")
       osc.volume.value = -Infinity;
     else
       osc.volume.value = -20;
