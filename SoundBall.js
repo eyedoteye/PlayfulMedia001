@@ -41,6 +41,8 @@ function getHalfStepsFromFrequency(A4Frequency, frequency)
   return halfStepsFromFrequency;
 }
 
+let globalFirstNote = 4 - 12 * 2;
+
 class LinearFrequencyArea
 {
   constructor(stage, canvas)
@@ -52,7 +54,7 @@ class LinearFrequencyArea
       height: canvas.height + 30
     }
   
-    this.noteBottom = 4 - 12 * 2; // Note: I should find a better way to sync this.
+    this.noteBottom = globalFirstNote;
     this.frequencyEnd = getNoteFrequency(440, 4 - 12);
     this.stage = stage;
     this.background = new createjs.Shape();
@@ -64,7 +66,6 @@ class LinearFrequencyArea
   getFrequencyOfPosition(y)
   {
     let bounds = this.getBounds();
-
 
     let frequency = getFrequencyOfPositionInLinearRange(
       getNoteFrequency(440, this.noteBottom), this.frequencyEnd,
@@ -88,7 +89,6 @@ class LinearFrequencyArea
 
   popBottomNote()
   {
-    //this.bbox.height -= 20; //NoteHeight, need a better way to sync this.
     this.noteBottom++;
     this.computeGraphics();
   }
@@ -116,8 +116,8 @@ class PianoRollArea
 {
   constructor(stage, canvas, linearFrequencyArea)
   {
-    this.noteHeight = 20;
-    this.noteWidth = 40;
+    this.noteHeight = 40;
+    this.noteWidth = this.noteHeight * 2;
 
     let linearFrequencyAreaBounds = linearFrequencyArea.getBounds();
     this.bbox = {
@@ -127,7 +127,7 @@ class PianoRollArea
       height: 0
     };
 
-    this.noteStart = 4 - 12 * 2;
+    this.noteStart = globalFirstNote;
     this.noteCount = 0;
 
     this.stage = stage;
@@ -587,7 +587,7 @@ function init()
     pianoRollArea.addTopNotes(count);
     linearFrequencyArea.popBottomNotes(count);
   };
-  shiftAreasByNotes(12);
+  shiftAreasByNotes(6);
   frequencyBall.updateRadius();
   frequencyBall.setRender();
   stage.update();
