@@ -323,8 +323,11 @@ function init()
 
     if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY))
     {
+      let pianoTopBound = pianoRollArea.getBounds().top + pianoRollArea.noteHeight / 2; 
+      if(stage.mouseY > pianoTopBound)
+        stage.pullMode = "";
+      
       let frequency = pianoRollArea.getNoteFrequencyOfPoint(stage.mouseX, stage.mouseY);
-
       if(frequency > 0)
         pianoosc.triggerAttackRelease(frequency, "8n");
     }
@@ -355,60 +358,57 @@ function init()
 
     if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY)) 
     {
-      if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY))
-      {
-        let frequency = pianoRollArea.getNoteFrequencyOfPoint(stage.mouseX, stage.mouseY);
-      }
+      let pianoTopBound = pianoRollArea.getBounds().top + pianoRollArea.noteHeight / 2; 
+      if(stage.mouseY > pianoTopBound)
+        stage.pullMode = "";
     }
 
+    if(stage.pullMode == "frequencyBall")
     {
-      if(stage.pullMode == "frequencyBall")
+      frequencyBall.yVelocity = 0;
+
+      let x = stage.mouseX - frequencyBall.x;
+      let y = stage.mouseY - frequencyBall.y;
+      let distance = Math.sqrt(x * x + y * y);
+
+      if(distance == 0)
       {
-        frequencyBall.yVelocity = 0;
-
-        let x = stage.mouseX - frequencyBall.x;
-        let y = stage.mouseY - frequencyBall.y;
-        let distance = Math.sqrt(x * x + y * y);
-
-        if(distance == 0)
-        {
-          distance = .001;
-        }
-
-        let forceToMouse = {
-          xDir: x / distance,
-          yDir: y / distance,
-          force: distance
-        }
-
-        frequencyBall.x += forceToMouse.xDir * forceToMouse.force;
-        frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
-
-        let gripOffset = frequencyBall.gripOffset;
-        if(distance < frequencyBall.minRadius * 1.2 || distance < frequencyBall.radius * .8) // grip tighten threshold
-        {
-
-          let modifier = .1; // Tighten grip to center at  X% the rate of mouse movement.
-
-          let currentRadialOffset = gripOffset.radialRatio * frequencyBall.radius;
-          
-          let mouseDeltaDistance = Math.sqrt(mouseDelta.x * mouseDelta.x + mouseDelta.y * mouseDelta.y);
-          gripOffset.radialRatio = (currentRadialOffset - mouseDeltaDistance * modifier) / frequencyBall.radius;
-
-          if(gripOffset.radialRatio < 0)
-            gripOffset.radialRatio = 0;
-          frequencyBall.gripOffset = gripOffset;
-        }              
-
-        frequencyBall.x += gripOffset.xDir * gripOffset.radialRatio * frequencyBall.radius;
-        frequencyBall.y += gripOffset.yDir * gripOffset.radialRatio * frequencyBall.radius;
-
-        frequencyBall.limitToBounds();
-        frequencyBall.updateRadius();
-        frequencyBall.limitToBounds();
-        frequencyBall.updateRadius();
-        frequencyBall.setRender();
+        distance = .001;
       }
+
+      let forceToMouse = {
+        xDir: x / distance,
+        yDir: y / distance,
+        force: distance
+      }
+
+      frequencyBall.x += forceToMouse.xDir * forceToMouse.force;
+      frequencyBall.y += forceToMouse.yDir * forceToMouse.force;
+
+      let gripOffset = frequencyBall.gripOffset;
+      if(distance < frequencyBall.minRadius * 1.2 || distance < frequencyBall.radius * .8) // grip tighten threshold
+      {
+
+        let modifier = .1; // Tighten grip to center at  X% the rate of mouse movement.
+
+        let currentRadialOffset = gripOffset.radialRatio * frequencyBall.radius;
+        
+        let mouseDeltaDistance = Math.sqrt(mouseDelta.x * mouseDelta.x + mouseDelta.y * mouseDelta.y);
+        gripOffset.radialRatio = (currentRadialOffset - mouseDeltaDistance * modifier) / frequencyBall.radius;
+
+        if(gripOffset.radialRatio < 0)
+          gripOffset.radialRatio = 0;
+        frequencyBall.gripOffset = gripOffset;
+      }              
+
+      frequencyBall.x += gripOffset.xDir * gripOffset.radialRatio * frequencyBall.radius;
+      frequencyBall.y += gripOffset.yDir * gripOffset.radialRatio * frequencyBall.radius;
+
+      frequencyBall.limitToBounds();
+      frequencyBall.updateRadius();
+      frequencyBall.limitToBounds();
+      frequencyBall.updateRadius();
+      frequencyBall.setRender();
     }
 
     stage.update();
@@ -422,7 +422,7 @@ function init()
   frequencyBall.limitToBounds = () =>
   {
     let bounds = linearFrequencyArea.getBounds();
-    let pianoTopBound = pianoRollArea.getBounds().top + 10;
+    let pianoTopBound = pianoRollArea.getBounds().top + pianoRollArea.noteHeight / 2;
 
     if(frequencyBall.y > pianoTopBound)
     {
@@ -446,7 +446,7 @@ function init()
   frequencyBall.isOnGround = () =>
   {
     //Note: Find a better way to sync this.
-    let pianoTopBound = pianoRollArea.getBounds().top + 10;
+    let pianoTopBound = pianoRollArea.getBounds().top + pianoRollArea.noteHeight / 2;
     return frequencyBall.y >= pianoTopBound; 
   }
      
