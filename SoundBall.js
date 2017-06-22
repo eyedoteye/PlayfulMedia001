@@ -55,7 +55,7 @@ class LinearFrequencyArea
     }
   
     this.noteBottom = globalFirstNote;
-    this.frequencyEnd = getNoteFrequency(440, 4 - 12);
+    this.frequencyEnd = getNoteFrequency(440, 4 - 11);
     this.stage = stage;
     this.background = new createjs.Shape();
     this.stage.addChild(this.background);
@@ -583,7 +583,7 @@ function init()
     {
       let oldY = frequencyBall.y;
 
-      frequencyBall.yVelocity += 20 * dT;
+      frequencyBall.yVelocity += 1 * dT;
       frequencyBall.y += frequencyBall.yVelocity;
 
       frequencyBall.updateRadius();
@@ -634,10 +634,8 @@ function init()
         collapsingNoteLine.y = nextPianoTopBound;
         frequencyBall.y = nextPianoTopBound;
         shiftAreasByNotes(1);
-        collapsingNoteLine.y = 0;
-        collapsingNoteLine.triggered = false;
+        moveNoteLineToNextPosition(collapsingNoteLine);
         collapsingNoteLine.computeGraphics();
-        
       }
     }
 
@@ -663,20 +661,29 @@ function init()
     pianoRollArea.addTopNotes(count);
     linearFrequencyArea.popBottomNotes(count);
   };
-  shiftAreasByNotes(6);
+  shiftAreasByNotes(0);
 
-  let pianoTopBound = pianoRollArea.getBounds().top;
-  let topNotePosition = pianoTopBound + pianoRollArea.noteHeight / 2;
-  let nextNoteFrequency = getNoteFrequency(440, pianoRollArea.getTopNote() + 1);
+  var moveNoteLineToNextPosition = (line) =>
+  {
+    let pianoTopBound = pianoRollArea.getBounds().top;
+    let topNotePosition = pianoTopBound + pianoRollArea.noteHeight / 2;
+    let nextNoteFrequency = getNoteFrequency(440, pianoRollArea.getTopNote() + 1);
 
-  let nextNotePosition = scale(
-    getNoteFrequency(440, linearFrequencyArea.noteBottom), linearFrequencyArea.frequencyEnd,
-    nextNoteFrequency,
-    pianoTopBound, 0);
+    let nextNotePosition = scale(
+      getNoteFrequency(440, linearFrequencyArea.noteBottom), linearFrequencyArea.frequencyEnd,
+      nextNoteFrequency,
+      pianoTopBound, 0);
+
+    line.y = nextNotePosition;
+    line.triggered = false;
+  }
 
   var collapsingNoteLine = new CollapsingNoteLine(
-    stage, canvas, 80 
+    stage, canvas, 0 
   );
+
+  moveNoteLineToNextPosition(collapsingNoteLine)
+  collapsingNoteLine.computeGraphics();
 
   frequencyBall.updateRadius();
   frequencyBall.setRender();
