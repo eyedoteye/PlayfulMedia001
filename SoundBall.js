@@ -74,6 +74,24 @@ class LinearFrequencyArea
 
     return frequency;
   }
+  
+  getPositionOfNoteFromBottom(count)
+  {
+    let position = this.getPositionOfFrequency(getNoteFrequency(440, this.noteBottom + count));
+    return position;
+  }
+
+  getPositionOfFrequency(frequency)
+  {
+    let bounds = this.getBounds();
+
+    let position = scale(
+      getNoteFrequency(440, this.noteBottom), this.frequencyEnd,
+      frequency,
+      bounds.bottom, bounds.top);
+
+    return position;
+  }
 
   getBounds()
   {
@@ -112,6 +130,31 @@ class LinearFrequencyArea
   }
 }
 
+class CollapsingNoteLine
+{
+  constructor(stage, canvas, y)
+  {
+    this.y = y;
+    console.log(y);
+    this.state = "Hanging"
+    this.background = new createjs.Shape();
+    this.stage = stage;
+    this.stage.addChild(this.background);
+    this.computeGraphics();
+    this.triggered = false;
+  }
+
+  computeGraphics()
+  {
+    this.background.graphics.clear();
+    this.background.graphics.beginFill("rgba(255,0,0,1)")
+      .drawRect(
+        0, this.y,
+        this.stage.canvas.width, 1)
+      .endFill();
+  }
+}
+
 class PianoRollArea
 {
   constructor(stage, canvas)
@@ -133,6 +176,11 @@ class PianoRollArea
     this.background = new createjs.Shape();
     this.stage.addChild(this.background);
     this.computeGraphics();
+  }
+
+  getTopNote()
+  {
+    return this.noteStart + this.noteCount;
   }
 
   addTopNotes(count)
@@ -323,6 +371,7 @@ function init()
     if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY))
     {
       let pianoTopBound = pianoRollArea.getBounds().top + pianoRollArea.noteHeight / 2; 
+
       if(stage.mouseY > pianoTopBound)
         stage.pullMode = "";
       
@@ -564,6 +613,16 @@ function init()
 
     let dT = e.delta / 1000;
     frequencyBall.update(dT);
+    if(!collapsingNoteLine.triggered)
+    {
+      if(frequencyBall.y < collapsingNoteLine.y)
+        collapsingNoteLine.triggered = true;
+    }
+    else if(frequencyBall.y > collapsingNoteLine.y)
+    {
+      collapsingNoteLine.y = frequencyBall.y;
+      collapsingNoteLine.computeGraphics();
+    }
 
     let newCurrentFrequency = getFrequencyAtHeight();
 
@@ -587,6 +646,20 @@ function init()
     linearFrequencyArea.popBottomNotes(count);
   };
   shiftAreasByNotes(6);
+
+  let pianoTopBound = pianoRollArea.getBounds().top;
+  let topNotePosition = pianoTopBound + pianoRollArea.noteHeight / 2;
+  let nextNoteFrequency = getNoteFrequency(440, pianoRollArea.getTopNote() + 1);
+
+  let nextNotePosition = scale(
+    getNoteFrequency(440, linearFrequencyArea.noteBottom), linearFrequencyArea.frequencyEnd,
+    nextNoteFrequency,
+    pianoTopBound, 0);
+
+  var collapsingNoteLine = new CollapsingNoteLine(
+    stage, canvas, 80 
+  );
+
   frequencyBall.updateRadius();
   frequencyBall.setRender();
   stage.update();
