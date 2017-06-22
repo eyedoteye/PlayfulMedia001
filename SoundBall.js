@@ -618,11 +618,29 @@ function init()
       if(frequencyBall.y < collapsingNoteLine.y)
         collapsingNoteLine.triggered = true;
     }
-    else if(frequencyBall.y > collapsingNoteLine.y)
+    else
     {
-      collapsingNoteLine.y = frequencyBall.y;
-      collapsingNoteLine.computeGraphics();
+      if(frequencyBall.y > collapsingNoteLine.y)
+      {
+        collapsingNoteLine.y = frequencyBall.y;
+        collapsingNoteLine.computeGraphics();
+      }
+
+      let pianoTopBound = pianoRollArea.bbox.y;
+      let nextPianoTopBound = pianoTopBound - pianoRollArea.noteHeight / 2;
+      console.log(nextPianoTopBound);
+      if(collapsingNoteLine.y >= nextPianoTopBound)
+      {
+        collapsingNoteLine.y = nextPianoTopBound;
+        frequencyBall.y = nextPianoTopBound;
+        shiftAreasByNotes(1);
+        collapsingNoteLine.y = 0;
+        collapsingNoteLine.triggered = false;
+        collapsingNoteLine.computeGraphics();
+        
+      }
     }
+
 
     let newCurrentFrequency = getFrequencyAtHeight();
 
@@ -641,7 +659,7 @@ function init()
   createjs.Ticker.setFPS(60);
   createjs.Ticker.addEventListener("tick", update);
 
-  let shiftAreasByNotes = (count) => {
+  var shiftAreasByNotes = (count) => {
     pianoRollArea.addTopNotes(count);
     linearFrequencyArea.popBottomNotes(count);
   };
