@@ -119,6 +119,7 @@ class LinearFrequencyArea
 
   computeGraphics()
   {
+    this.background.graphics.clear();
     this.background.graphics.beginLinearGradientFill(
       ["black", "green"], [0.1,1],
       this.bbox.x, this.bbox.height,
@@ -257,6 +258,7 @@ class PianoRollArea
 
   computeGraphics()
   {
+    this.background.graphics.clear();
     let bounds = this.getBounds();
 
     this.background.graphics.beginFill("black")
@@ -627,6 +629,7 @@ function init()
         frequencyBall.y = collapsingNoteLine.y;
         frequencyBall.yVelocity = 0;
         collapsingNoteLine.state = "collapsing";
+        linearFrequencyArea.popBottomNote();
       }
     }
     else if(collapsingNoteLine.state == "collapsing")
@@ -644,10 +647,14 @@ function init()
       {
         collapsingNoteLine.y = nextPianoTopBound;
         frequencyBall.y = nextPianoTopBound;
-        shiftAreasByNotes(1);
+        
+        pianoRollArea.addTopNote(1);
+
         moveNoteLineToNextPosition(collapsingNoteLine);
         collapsingNoteLine.computeGraphics();
       }
+      linearFrequencyArea.bbox.height = collapsingNoteLine.y;
+      linearFrequencyArea.computeGraphics();
     }
 
     let newCurrentFrequency = getFrequencyAtHeight();
@@ -687,7 +694,7 @@ function init()
     line.y = nextNotePosition;
     line.state = "awaiting_trigger";
   }
-
+  
   var collapsingNoteLine = new CollapsingNoteLine(
     stage, canvas, 0 
   );
@@ -698,5 +705,4 @@ function init()
   frequencyBall.updateRadius();
   frequencyBall.setRender();
   stage.update();
-
 }
