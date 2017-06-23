@@ -583,7 +583,7 @@ function init()
     {
       let oldY = frequencyBall.y;
 
-      frequencyBall.yVelocity += 1 * dT;
+      frequencyBall.yVelocity += 10 * dT;
       frequencyBall.y += frequencyBall.yVelocity;
 
       frequencyBall.updateRadius();
@@ -610,15 +610,26 @@ function init()
       stage.pullMode = "";
 
     worthUpdating = false;
+    
+    console.log(frequencyBall.yVelocity);
 
     let dT = e.delta / 1000;
     frequencyBall.update(dT);
-    if(!collapsingNoteLine.triggered)
+    if(collapsingNoteLine.state == "awaiting_trigger")
     {
       if(frequencyBall.y < collapsingNoteLine.y)
-        collapsingNoteLine.triggered = true;
+        collapsingNoteLine.state = "awaiting_ball";
     }
-    else
+    else if(collapsingNoteLine.state == "awaiting_ball")
+    {
+      if(frequencyBall.y > collapsingNoteLine.y)
+      {
+        frequencyBall.y = collapsingNoteLine.y;
+        frequencyBall.yVelocity = 0;
+        collapsingNoteLine.state = "collapsing";
+      }
+    }
+    else if(collapsingNoteLine.state == "collapsing")
     {
       if(frequencyBall.y > collapsingNoteLine.y)
       {
@@ -638,7 +649,6 @@ function init()
         collapsingNoteLine.computeGraphics();
       }
     }
-
 
     let newCurrentFrequency = getFrequencyAtHeight();
 
@@ -675,7 +685,7 @@ function init()
       pianoTopBound, 0);
 
     line.y = nextNotePosition;
-    line.triggered = false;
+    line.state = "awaiting_trigger";
   }
 
   var collapsingNoteLine = new CollapsingNoteLine(
