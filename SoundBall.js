@@ -261,7 +261,7 @@ class PianoRollArea
     this.background.graphics.clear();
     let bounds = this.getBounds();
 
-    this.background.graphics.beginFill("black")
+    this.background.graphics.beginFill("")
       .drawRect(
         this.bbox.x, this.bbox.y + this.noteHeight / 2,
         this.bbox.width, this.bbox.height)
@@ -458,7 +458,7 @@ function init()
       frequencyBall.updateRadius();
       frequencyBall.limitToBounds();
       frequencyBall.updateRadius();
-      frequencyBall.setRender();
+      frequencyBall.computeGraphics();
     }
 
     stage.update();
@@ -509,7 +509,7 @@ function init()
     frequencyBall.radius = radius; 
   };
 
-  frequencyBall.setRender = () =>
+  frequencyBall.computeGraphics = () =>
   {
     frequencyBall.graphics.clear();
     frequencyBall.graphics.beginFill("Green").drawCircle(0, 0, frequencyBall.radius);
@@ -570,7 +570,7 @@ function init()
 
         frequencyBall.updateRadius();
         frequencyBall.limitToBounds();
-        frequencyBall.setRender();
+        frequencyBall.computeGraphics();
         frequencyBall.updateGripOffset();
 
         gripOffset = frequencyBall.gripOffset;
@@ -590,7 +590,7 @@ function init()
 
       frequencyBall.updateRadius();
       frequencyBall.limitToBounds();
-      frequencyBall.setRender();
+      frequencyBall.computeGraphics();
 
       if(oldY != frequencyBall.y)
         worthUpdating = true;
@@ -703,6 +703,6 @@ function init()
   collapsingNoteLine.computeGraphics();
 
   frequencyBall.updateRadius();
-  frequencyBall.setRender();
+  frequencyBall.computeGraphics();
   stage.update();
 }
