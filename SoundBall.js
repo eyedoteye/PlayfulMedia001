@@ -42,6 +42,9 @@ function getHalfStepsFromFrequency(A4Frequency, frequency)
 }
 
 let globalFirstNote = 4 - 12 * 2;
+let globalMaxNoteCount = 12;
+let globalFirstFrequency = getNoteFrequency(440, globalFirstNote);
+let globalLastFrequency = getNoteFrequency(440, globalFirstNote + globalMaxNoteCount); 
 
 class LinearFrequencyArea
 {
@@ -93,6 +96,18 @@ class LinearFrequencyArea
     return position;
   }
 
+  getFrequencyOfBottom()
+  {
+    let frequency = getNoteFrequency(440, this.noteBottom);
+    return frequency;
+  }
+  
+  getFrequencyOfTop()
+  {
+    let frequency = this.frequencyEnd;
+    return frequency;
+  }
+
   getBounds()
   {
     let bounds = {
@@ -120,9 +135,23 @@ class LinearFrequencyArea
   computeGraphics()
   {
     this.background.graphics.clear();
+
+    let gradientStart = scale(
+      globalFirstFrequency, globalLastFrequency,
+      this.getFrequencyOfBottom(),
+      0, 1
+    );
+    
+    let gradientEnd = scale(
+      globalFirstFrequency, globalLastFrequency,
+      this.getFrequencyOfTop(),
+      0, 1
+    );
+    console.log(gradientStart);
+   
     this.background.graphics.beginLinearGradientFill(
-      ["black", "green"], [0.1,1],
-      this.bbox.x, this.bbox.height,
+      ["black", "green"], [0, 1],
+      0, (1 + gradientStart) * this.bbox.height,
       0, 0)
       .drawRect(
         this.bbox.x, this.bbox.y,
