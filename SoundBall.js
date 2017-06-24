@@ -61,7 +61,7 @@ class LinearFrequencyArea
     this.frequencyEnd = getNoteFrequency(440, 4 - 11);
     this.stage = stage;
     this.background = new createjs.Shape();
-    this.stage.addChild(this.background);
+    this.stage.addChildAt(this.background, 0);
 
     this.computeGraphics();
   }
@@ -147,12 +147,14 @@ class LinearFrequencyArea
       this.getFrequencyOfTop(),
       0, 1
     );
-    console.log(gradientStart);
+    console.log(
+      (1 + gradientStart) * (this.bbox.height + this.bbox.y),
+      gradientEnd * this.bbox.y);
    
     this.background.graphics.beginLinearGradientFill(
       ["black", "green"], [0, 1],
-      0, (1 + gradientStart) * this.bbox.height,
-      0, 0)
+      0, (1 + gradientStart) * (this.bbox.height + this.bbox.y),
+      0, (gradientEnd - 1) * this.bbox.y)
       .drawRect(
         this.bbox.x, this.bbox.y,
         this.bbox.width, this.bbox.height)
@@ -165,7 +167,6 @@ class CollapsingNoteLine
   constructor(stage, canvas, y)
   {
     this.y = y;
-    console.log(y);
     this.state = "Hanging"
     this.background = new createjs.Shape();
     this.stage = stage;
@@ -635,6 +636,7 @@ function init()
   let getFrequencyAtHeight = () => linearFrequencyArea.getFrequencyOfPosition(frequencyBall.y);
 
   let worthUpdating = false;
+  let altLinearFrequencyArea;
   function update(e)
   {
     if(!stage.mouseInBounds)
@@ -642,8 +644,6 @@ function init()
 
     worthUpdating = false;
     
-    console.log(frequencyBall.yVelocity);
-
     let dT = e.delta / 1000;
     frequencyBall.update(dT);
     if(collapsingNoteLine.state == "awaiting_trigger")
@@ -658,7 +658,18 @@ function init()
         frequencyBall.y = collapsingNoteLine.y;
         frequencyBall.yVelocity = 0;
         collapsingNoteLine.state = "collapsing";
+
+        altLinearFrequencyArea = new LinearFrequencyArea(stage, canvas);
+        altLinearFrequencyArea.noteBottom = linearFrequencyArea.noteBottom;
+        altLinearFrequencyArea.frequencyEnd = getNoteFrequency(440, linearFrequencyArea.noteBottom + 1);
+
+        altLinearFrequencyArea.bbox.y = collapsingNoteLine.y; 
+        altLinearFrequencyArea.bbox.height = pianoRollArea.bbox.y - collapsingNoteLine.y + pianoRollArea.noteHeight / 2;
+        altLinearFrequencyArea.computeGraphics();
+        
         linearFrequencyArea.popBottomNote();
+        linearFrequencyArea.computeGraphics();
+
       }
     }
     else if(collapsingNoteLine.state == "collapsing")
@@ -667,23 +678,30 @@ function init()
       {
         collapsingNoteLine.y = frequencyBall.y;
         collapsingNoteLine.computeGraphics();
+        linearFrequencyArea.bbox.height = collapsingNoteLine.y;
+        linearFrequencyArea.computeGraphics();
+        altLinearFrequencyArea.bbox.y = collapsingNoteLine.y;
+        altLinearFrequencyArea.bbox.height = pianoRollArea.bbox.y - collapsingNoteLine.y + pianoRollArea.noteHeight / 2;
+        altLinearFrequencyArea.computeGraphics();
       }
 
       let pianoTopBound = pianoRollArea.bbox.y;
       let nextPianoTopBound = pianoTopBound - pianoRollArea.noteHeight / 2;
-      console.log(nextPianoTopBound);
       if(collapsingNoteLine.y >= nextPianoTopBound)
       {
         collapsingNoteLine.y = nextPianoTopBound;
         frequencyBall.y = nextPianoTopBound;
+        linearFrequencyArea.bbox.height = collapsingNoteLine.y;
+        linearFrequencyArea.computeGraphics();
+        altLinearFrequencyArea.bbox.y = collapsingNoteLine.y;
+        altLinearFrequencyArea.bbox.height = pianoRollArea.bbox.y - collapsingNoteLine.y + pianoRollArea.noteHeight / 2;
+        altLinearFrequencyArea.computeGraphics();
         
         pianoRollArea.addTopNote(1);
 
         moveNoteLineToNextPosition(collapsingNoteLine);
         collapsingNoteLine.computeGraphics();
       }
-      linearFrequencyArea.bbox.height = collapsingNoteLine.y;
-      linearFrequencyArea.computeGraphics();
     }
 
     let newCurrentFrequency = getFrequencyAtHeight();
