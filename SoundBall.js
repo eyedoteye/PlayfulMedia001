@@ -403,9 +403,6 @@ function init()
     if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY))
     {
       let pianoTopBound = pianoRollArea.getBounds().top + pianoRollArea.noteHeight / 2; 
-
-      if(stage.mouseY > pianoTopBound)
-        stage.pullMode = "";
       
       let frequency = pianoRollArea.getNoteFrequencyOfPoint(stage.mouseX, stage.mouseY);
       if(frequency > 0)
@@ -439,8 +436,6 @@ function init()
     if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY)) 
     {
       let pianoTopBound = pianoRollArea.getBounds().top + pianoRollArea.noteHeight / 2; 
-      if(stage.mouseY > pianoTopBound)
-        stage.pullMode = "";
     }
 
     if(stage.pullMode == "frequencyBall")
