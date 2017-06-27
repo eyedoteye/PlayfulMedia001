@@ -399,8 +399,7 @@ function init()
         radialRatio: distance/frequencyBall.radius
       } 
     }
-
-    if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY))
+    else if(pianoRollArea.isPointInBounds(stage.mouseX, stage.mouseY))
     {
       let pianoTopBound = pianoRollArea.getBounds().top + pianoRollArea.noteHeight / 2; 
       
