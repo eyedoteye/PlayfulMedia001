@@ -41,7 +41,7 @@ function getHalfStepsFromFrequency(A4Frequency, frequency)
   return halfStepsFromFrequency;
 }
 
-let globalFirstNote = 4 - 12 * 2;
+let globalFirstNote = 4 - 12;
 let globalMaxNoteCount = 12;
 let globalFirstFrequency = getNoteFrequency(440, globalFirstNote);
 let globalLastFrequency = getNoteFrequency(440, globalFirstNote + globalMaxNoteCount); 
@@ -58,7 +58,7 @@ class LinearFrequencyArea
     }
   
     this.noteBottom = globalFirstNote;
-    this.frequencyEnd = getNoteFrequency(440, 4 - 11);
+    this.frequencyEnd = getNoteFrequency(440, globalFirstNote + 13);
     this.stage = stage;
     this.background = new createjs.Shape();
     this.stage.addChildAt(this.background, 0);
@@ -334,7 +334,7 @@ function init()
       }).toMaster();
 
   let osc = new Tone.Oscillator(0, "sine").toMaster().start();
-  osc.volume.value = -15;
+  osc.volume.value = 0;
 
   let canvas = document.createElement("canvas");
   canvas.width = 360;
