@@ -41,7 +41,7 @@ function getHalfStepsFromFrequency(A4Frequency, frequency)
   return halfStepsFromFrequency;
 }
 
-let globalFirstNote = 4 - 12;
+let globalFirstNote = 0;
 let globalMaxNoteCount = 12;
 let globalFirstFrequency = getNoteFrequency(440, globalFirstNote);
 let globalLastFrequency = getNoteFrequency(440, globalFirstNote + globalMaxNoteCount); 
